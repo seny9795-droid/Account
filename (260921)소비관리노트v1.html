@@ -1,0 +1,1412 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>스마트 소비 관리 노트</title>
+    <!-- Chart.js 라이브러리 추가 -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary: #4a90e2;
+            --income: #2ecc71;
+            --expense: #e74c3c;
+            --bg: #f4f7f6;
+            --surface: #ffffff;
+            --text-main: #333333;
+            --text-sub: #888888;
+            --border: #eeeeee;
+        }
+
+        body {
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--bg);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            padding: 20px 10px;
+            margin: 0;
+        }
+
+        .container {
+            background: var(--surface);
+            width: 100%;
+            max-width: 1100px; 
+            padding: 32px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+        }
+
+        h2 {
+            margin-top: 0;
+            color: #2c3e50;
+            font-size: 24px;
+            margin-bottom: 24px;
+            text-align: center;
+        }
+
+        /* 탭 메뉴 */
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 24px;
+            background: #f0f0f0;
+            padding: 4px;
+            border-radius: 12px;
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 12px 4px;
+            border: none;
+            background: none;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 15px;
+            color: var(--text-sub);
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .tab-btn.active {
+            background: var(--surface);
+            color: var(--primary);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .section-content { display: none; }
+        .active-section { display: block; }
+
+        /* 대시보드 그리드 */
+        .dashboard-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; }
+        @media (max-width: 850px) { .dashboard-grid { grid-template-columns: 1fr; } }
+
+        /* 폼 영역 */
+        .type-toggle { display: flex; gap: 10px; margin-bottom: 20px; }
+        .type-toggle label { flex: 1; text-align: center; padding: 12px; border-radius: 12px; background: #f8f9fa; border: 2px solid transparent; font-weight: 700; cursor: pointer; transition: 0.2s; color: #aaa; }
+        .type-toggle input[type="radio"] { display: none; }
+        #type-expense:checked + label { background: #ffeaea; color: var(--expense); border-color: var(--expense); }
+        #type-income:checked + label { background: #e9f7ef; color: var(--income); border-color: var(--income); }
+
+        .selection-container { margin-bottom: 20px; }
+        .selection-label { display: block; margin-bottom: 8px; font-size: 14px; font-weight: 600; color: #555; }
+        .selection-list { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+        .selection-item input[type="radio"] { display: none; }
+        .selection-item label { 
+            display: inline-block; padding: 8px 16px; border-radius: 20px; 
+            background: #f8f9fa; border: 1px solid var(--border); color: #555; 
+            font-size: 13px; cursor: pointer; transition: all 0.2s; user-select: none; 
+        }
+        
+        .action-btns-wrapper { display: flex; gap: 4px; margin-left: 4px; }
+        .action-btn-small { padding: 6px 12px; border-radius: 20px; background: #f0f0f0; border: 1px dashed #ccc; color: #666; font-size: 12px; cursor: pointer; }
+        .action-btn-small:hover { background: #e0e0e0; }
+        .del-btn-small { color: var(--expense); border-color: #ffcccc; background: #fff0f0; }
+        .del-btn-small:hover { background: #ffeaea; }
+        
+        .input-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px; }
+        .input-grid input, .input-grid select { padding: 14px; border: 1px solid #ddd; border-radius: 12px; font-size: 14px; outline: none; width: 100%; box-sizing: border-box; background: #fff; }
+        .input-grid input:focus, .input-grid select:focus { border-color: var(--primary); }
+        .full-width { grid-column: span 2; }
+        
+        .fixed-expense-wrapper { grid-column: span 2; display: flex; align-items: center; gap: 8px; background: #f8f9fa; padding: 12px 16px; border-radius: 12px; cursor: pointer; border: 1px solid #eee; }
+        .fixed-expense-wrapper input { width: 18px; height: 18px; cursor: pointer; }
+        .fixed-expense-wrapper label { font-size: 14px; font-weight: 600; color: #555; cursor: pointer; flex: 1; }
+
+        .btn-group { display: flex; gap: 10px; }
+        .submit-btn { background-color: var(--primary); color: white; border: none; font-weight: 600; cursor: pointer; padding: 16px; border-radius: 12px; flex: 1; font-size: 16px; }
+        .cancel-edit-btn { background-color: #95a5a6; color: white; border: none; font-weight: 600; cursor: pointer; padding: 16px; border-radius: 12px; font-size: 16px; display: none; }
+
+        /* 월간 달력 스타일 */
+        .calendar-wrapper { margin-top: 32px; border: 1px solid #eee; border-radius: 16px; padding: 20px; background: #fff; touch-action: pan-y; }
+        .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .cal-nav-btn { background: #f0f0f0; border: none; padding: 6px 12px; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+        .cal-day-header { font-size: 12px; text-align: center; font-weight: 700; color: #888; padding-bottom: 6px; }
+        .cal-day { border: 1px solid #f0f0f0; border-radius: 8px; padding: 4px; cursor: pointer; min-height: 85px; background: #fafafa; transition: 0.2s; display: flex; flex-direction: column; justify-content: space-between; }
+        .cal-day:hover { background: #f0f7ff; border-color: #cce0ff; }
+        .cal-day.selected { border-color: var(--primary); background: #e6f0fa; box-shadow: inset 0 0 0 1px var(--primary); }
+        .cal-day.today .cal-date { color: var(--primary); font-weight: 800; background: #e6f0fa; border-radius: 4px; }
+        .cal-date { font-size: 11px; text-align: center; color: #555; font-weight: 600; padding-bottom: 2px; }
+        .cal-entries { display: flex; flex-direction: column; gap: 2px; overflow: hidden; max-height: 50px; }
+        
+        .cal-item-row { font-size: 9px; display: flex; align-items: center; justify-content: space-between; gap: 2px; padding: 1px 2px; }
+        .cal-cat-name { font-weight: 600; }
+        .cal-amt-exp { color: var(--expense); font-weight: 700; font-size: 9px; }
+        .cal-amt-inc { color: var(--income); font-weight: 700; font-size: 9px; }
+        .cal-day-summary { font-size: 9px; text-align: right; border-top: 1px dashed #ddd; margin-top: 2px; padding-top: 3px; font-weight: 800; }
+        .cal-summary-exp { color: var(--expense); background: #fff5f5; padding: 1px 3px; border-radius: 4px; display: inline-block; }
+        .cal-summary-net { color: #444; font-size: 9px; margin-right: 2px; }
+
+        /* 일별 상세 내역 */
+        .daily-detail-section { margin-top: 16px; padding: 16px; background: #f8f9fa; border-radius: 12px; border: 1px solid #eee; display: none; }
+        .daily-detail-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .close-btn { background: none; border: 1px solid #ccc; padding: 4px 8px; border-radius: 6px; cursor: pointer; font-size: 12px;}
+        .expense-list { list-style: none; padding: 0; margin: 0; max-height: 250px; overflow-y: auto; }
+        .expense-item { display: flex; justify-content: space-between; align-items: flex-start; padding: 12px; background: #fff; border-radius: 8px; margin-bottom: 8px; border: 1px solid #eee; }
+        .item-badges { display: flex; gap: 4px; margin-bottom: 4px; }
+        .badge { font-size: 10px; color: white; padding: 2px 6px; border-radius: 6px; font-weight: 600; }
+        .badge-fixed { background-color: #95a5a6; }
+        .item-main-text { font-size: 14px; font-weight: 600; color: #333; margin-bottom: 2px; }
+        .item-sub-text { font-size: 12px; color: #666; }
+        .item-actions { display: flex; gap: 6px; justify-content: flex-end; margin-top: 6px; }
+        .action-btn { background: none; border: none; font-size: 11px; cursor: pointer; padding: 4px 8px; border-radius: 4px; font-weight: 600;}
+        .edit-btn { color: var(--primary); background: #e6f0fa; }
+        .delete-btn { color: var(--expense); background: #ffeaea; }
+        .amount-exp { font-size: 15px; font-weight: 700; color: var(--expense); display: block; text-align: right; }
+        .amount-inc { font-size: 15px; font-weight: 700; color: var(--income); display: block; text-align: right; }
+        .empty-state { text-align: center; color: var(--text-sub); padding: 20px 0; font-size: 13px; }
+
+        /* 통계 섹션 (요약) */
+        .stats-card { background: #f8f9fa; padding: 24px; border-radius: 16px; margin-bottom: 20px; border: 1px solid #eee; }
+        .stats-title { margin-top: 0; font-size: 16px; margin-bottom: 16px; font-weight: 700; color: #2c3e50; }
+        
+        .summary-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 12px; }
+        .summary-box { text-align: center; padding: 12px 8px; border-radius: 12px; background: white; border: 1px solid #eee; }
+        .summary-label { font-size: 12px; color: #888; margin-bottom: 6px; }
+        .summary-val { font-size: 15px; font-weight: 700; }
+        .val-inc { color: var(--income); }
+        .val-exp { color: var(--expense); }
+        
+        .total-balance { display: flex; justify-content: space-between; align-items: center; padding-top: 16px; border-top: 1px solid #ddd; }
+        .balance-label { font-size: 16px; font-weight: 700; color: #333; }
+        .balance-val { font-size: 20px; font-weight: 700; color: var(--primary); }
+        
+        .budget-table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 10px; overflow: hidden; font-size: 13px; border: 1px solid #eee; }
+        .budget-table th, .budget-table td { padding: 10px 12px; text-align: center; border-bottom: 1px solid #f0f0f0; }
+        .budget-table th { background: #f8f9fa; color: #555; font-weight: 700; font-size: 12px; }
+        .budget-table td:first-child { text-align: left; font-weight: 600; }
+        .budget-table td:last-child { font-weight: 700; }
+        .budget-table tfoot td { background: #f8f9fa; font-weight: 800; border-top: 2px solid #ddd; border-bottom: none; }
+        .table-safe { color: var(--primary); }
+        .table-warn { color: var(--expense); }
+
+        /* 결제일 카드 */
+        .billing-card { background: #fff0f0; border: 1px solid #ffd6d6; }
+        .billing-title { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
+        .billing-amount { font-size: 28px; font-weight: 800; color: var(--expense); text-align: right; margin-bottom: 4px; }
+        .billing-desc { font-size: 12px; color: #666; text-align: right; }
+
+        /* 통계탭 레이아웃 */
+        .stats-3col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .stats-full { grid-column: span 2; }
+        @media (max-width: 850px) { .stats-3col { grid-template-columns: 1fr; } .stats-full { grid-column: span 1; } }
+
+        .chart-container { position: relative; width: 100%; height: 300px; }
+        .filter-select { padding: 6px 12px; border-radius: 8px; border: 1px solid #ccc; font-size: 13px; outline: none; background: #fff; cursor: pointer; }
+
+        .schedule-item { display: flex; justify-content: space-between; align-items: center; padding: 14px; background: white; border-radius: 12px; margin-bottom: 10px; border: 1px solid var(--border); }
+        
+        /* 백업/복구 UI */
+        .backup-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .backup-btn { background: #34495e; color: white; border: none; padding: 14px; border-radius: 12px; font-weight: 600; cursor: pointer; width: 100%; }
+        .restore-btn { background: #f39c12; color: white; border: none; padding: 14px; border-radius: 12px; font-weight: 600; cursor: pointer; width: 100%; }
+        
+        .budget-setting-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #eee; }
+        .budget-setting-input { width: 120px; padding: 6px 10px; border: 1px solid #ccc; border-radius: 8px; text-align: right; font-size: 14px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>소비 관리 노트</h2>
+    
+    <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('dashboard')">대시보드</button>
+        <button class="tab-btn" onclick="switchTab('analytics')">통계 및 분석</button>
+        <button class="tab-btn" onclick="switchTab('schedule')">일정 및 설정</button>
+    </div>
+
+    <!-- 1. 대시보드 탭 -->
+    <div id="dashboard-section" class="section-content active-section">
+        <div class="dashboard-grid">
+            <div class="left-panel">
+                <div class="type-toggle">
+                    <input type="radio" id="type-expense" name="entry-type" value="expense" checked onchange="toggleFormType()">
+                    <label for="type-expense">지출</label>
+                    <input type="radio" id="type-income" name="entry-type" value="income" onchange="toggleFormType()">
+                    <label for="type-income">수입</label>
+                </div>
+
+                <form id="entry-form">
+                    <div class="input-grid">
+                        <input type="date" id="date" class="full-width" required>
+                        <input type="text" id="place" placeholder="사용 장소 / 수입처" required>
+                        <input type="number" id="amount" placeholder="금액 (원)" required>
+                        <input type="text" id="item" placeholder="품목 / 내역 상세" class="full-width" required>
+                        
+                        <!-- 할부 여부 체크박스 및 할부 개월 수 설정 -->
+                        <div class="fixed-expense-wrapper full-width" id="installment-toggle-wrapper" style="background:#f8f9fa;">
+                            <input type="checkbox" id="is-installment" onchange="toggleInstallment()">
+                            <label for="is-installment">할부 거래입니까?</label>
+                        </div>
+
+                        <div class="selection-container full-width" id="installment-months-container" style="display:none; margin-bottom:12px;">
+                            <span class="selection-label">할부 개월 수 선택</span>
+                            <select id="installment-months" class="filter-select" style="width:100%;">
+                                <option value="2">2개월 할부</option>
+                                <option value="3">3개월 할부</option>
+                                <option value="4">4개월 할부</option>
+                                <option value="5">5개월 할부</option>
+                                <option value="6">6개월 할부</option>
+                                <option value="12">12개월 할부</option>
+                            </select>
+                        </div>
+
+                        <!-- 카테고리 -->
+                        <div class="selection-container full-width" id="category-container" style="margin-bottom:12px;">
+                            <span class="selection-label">카테고리</span>
+                            <div class="selection-list" id="category-list"></div>
+                        </div>
+
+                        <!-- 결제 수단 -->
+                        <div class="selection-container full-width" id="payment-container" style="margin-bottom:12px;">
+                            <span class="selection-label">결제 수단</span>
+                            <div class="selection-list" id="payment-list"></div>
+                        </div>
+
+                        <!-- 고정비 설정 및 반복 설정 -->
+                        <div class="fixed-expense-wrapper" id="fixed-expense-container">
+                            <input type="checkbox" id="is-fixed" onchange="toggleFixedOptions()">
+                            <label for="is-fixed">고정비로 설정</label>
+                        </div>
+
+                        <div class="selection-container full-width" id="fixed-options-container" style="display:none; margin-bottom:12px; background:#f8f9fa; padding:10px; border-radius:8px; border:1px solid #eee;">
+                            <div style="display:flex; gap:16px; align-items:center;">
+                                <label style="font-size:13px; font-weight:600; color:#555; display:flex; align-items:center; gap:6px;">
+                                    <input type="checkbox" id="is-repeating" style="width:16px; height:16px;"> 반복 여부
+                                </label>
+                                <div style="flex:1; display:flex; align-items:center; gap:8px;">
+                                    <span style="font-size:13px; font-weight:600; color:#555;">반복 주기:</span>
+                                    <select id="repeat-cycle" class="filter-select" style="flex:1;">
+                                        <option value="monthly">매월</option>
+                                        <option value="yearly">매년</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="btn-group">
+                        <button type="submit" class="submit-btn" id="submit-btn">내역 추가하기</button>
+                        <button type="button" class="cancel-edit-btn" id="cancel-edit-btn" onclick="cancelEdit()">수정 취소</button>
+                    </div>
+                </form>
+
+                <!-- 월간 달력 -->
+                <div class="calendar-wrapper" id="calendar-wrapper">
+                    <div class="calendar-header">
+                        <button class="cal-nav-btn" onclick="changeMonth(-1)">◀ 이전달</button>
+                        <span id="calendar-month-label" style="font-weight:800; font-size:16px;"></span>
+                        <button class="cal-nav-btn" onclick="changeMonth(1)">다음달 ▶</button>
+                    </div>
+                    <div class="calendar-grid" id="calendar-grid">
+                        <div class="cal-day-header" style="color:#e74c3c;">일</div>
+                        <div class="cal-day-header">월</div>
+                        <div class="cal-day-header">화</div>
+                        <div class="cal-day-header">수</div>
+                        <div class="cal-day-header">목</div>
+                        <div class="cal-day-header">금</div>
+                        <div class="cal-day-header" style="color:#3498db;">토</div>
+                    </div>
+                    <div id="daily-detail-section" class="daily-detail-section">
+                        <div class="daily-detail-header">
+                            <strong id="daily-detail-title" style="color:#333;">상세 내역</strong>
+                            <button class="close-btn" onclick="closeDailyDetails()">닫기</button>
+                        </div>
+                        <ul class="expense-list" id="daily-entry-list"></ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="right-panel">
+                <div class="stats-card">
+                    <h3 class="stats-title" id="current-month-title">이번 달 요약</h3>
+                    <div class="summary-grid-3">
+                        <div class="summary-box">
+                            <div class="summary-label">총 수입</div>
+                            <div class="summary-val val-inc" id="dash-income">0</div>
+                        </div>
+                        <div class="summary-box">
+                            <div class="summary-label" id="salary-label-text">지난달 월급</div>
+                            <div class="summary-val val-inc" id="dash-salary">0</div>
+                        </div>
+                        <div class="summary-box">
+                            <div class="summary-label">총 지출</div>
+                            <div class="summary-val val-exp" id="dash-expense">0</div>
+                        </div>
+                    </div>
+                    <div style="font-size: 13px; color: #555; margin-bottom: 6px; display: flex; justify-content: space-between; background: #fff; padding: 7px 10px; border-radius: 6px; border: 1px solid #eee;">
+                        <span>총 목표 지출</span>
+                        <strong id="dash-total-budget" style="color: var(--expense);">0원</strong>
+                    </div>
+                    <div style="font-size: 13px; color: #555; margin-bottom: 6px; display: flex; justify-content: space-between; background: #fff; padding: 7px 10px; border-radius: 6px; border: 1px solid #eee;">
+                        <span>목표 가용예산 <span style="font-size:10px; color:#888;">(수입+월급-총목표지출)</span></span>
+                        <strong id="dash-available-budget" style="color: var(--primary);">0원</strong>
+                    </div>
+                    <!-- 💡 요청 반영: '실제 지출과 목표 지출의 차액'으로 명칭 명확화 -->
+                    <div style="font-size: 13px; color: #555; margin-bottom: 12px; display: flex; justify-content: space-between; background: #fff; padding: 7px 10px; border-radius: 6px; border: 1px solid #eee;">
+                        <span>실제 지출과 목표 지출의 차액</span>
+                        <strong id="dash-budget-diff">0원</strong>
+                    </div>
+                    <div class="total-balance">
+                        <div class="balance-label">현재 예산 <button class="edit-budget-btn" onclick="editCurrentBudget()">수정</button></div>
+                        <div class="balance-val"><span id="dash-balance">0</span>원</div>
+                    </div>
+                </div>
+                
+                <div class="stats-card">
+                    <h3 class="stats-title">카테고리별 예산 현황</h3>
+                    <div id="dashboard-budget-container"></div>
+                </div>
+
+                <div class="stats-card">
+                    <h3 class="stats-title">이번 달 고정 지출 리스트</h3>
+                    <div id="dashboard-fixed-expense-list"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. 통계 및 분석 탭 -->
+    <div id="analytics-section" class="section-content">
+        <div class="stats-card billing-card">
+            <div class="billing-title">
+                <h3 class="stats-title" style="margin:0; color: #c0392b;" id="billing-main-title">💳 카드 대금 결산 (22일 결제예정)</h3>
+                <span style="font-size:12px; background:white; padding:4px 8px; border-radius:12px; border:1px solid #ffd6d6;">전월 10일 ~ 당월 9일 사용분</span>
+            </div>
+            <div class="billing-amount" id="billing-amount">0원</div>
+            <div class="billing-desc" id="billing-desc">산정 기간: 00.10 ~ 00.09</div>
+        </div>
+
+        <div class="stats-3col">
+            <div class="stats-card stats-full">
+                <h3 class="stats-title">카테고리별 지출 비율 (이번 달)</h3>
+                <div class="chart-container" style="height: 350px;">
+                    <canvas id="categoryChart"></canvas>
+                </div>
+            </div>
+
+            <!-- 주별 카테고리별 조회 차트 (고정비 제외 산출 및 하단 명시) -->
+            <div class="stats-card">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                    <h3 class="stats-title" style="margin:0;">이번 달 주별 지출 추이</h3>
+                    <select id="weekly-category-select" class="filter-select" onchange="updateWeeklyChart()">
+                        <option value="all">전체 카테고리</option>
+                    </select>
+                </div>
+                <div class="chart-container"><canvas id="weeklyChart"></canvas></div>
+                <div style="font-size: 11px; color: #888; text-align: right; margin-top: 6px;">* 지출 및 예산 산출 시 고정비 항목 제외</div>
+            </div>
+
+            <!-- 월별 카테고리별 조회 차트 (고정비 제외 산출 및 하단 명시) -->
+            <div class="stats-card">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                    <h3 class="stats-title" style="margin:0;">최근 4개월 지출 추이</h3>
+                    <select id="monthly-category-select" class="filter-select" onchange="updateMonthlyChart()">
+                        <option value="all">전체 카테고리</option>
+                    </select>
+                </div>
+                <div class="chart-container"><canvas id="monthlyChart"></canvas></div>
+                <div style="font-size: 11px; color: #888; text-align: right; margin-top: 6px;">* 지출 및 예산 산출 시 고정비 항목 제외</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. 일정 및 설정 탭 -->
+    <div id="schedule-section" class="section-content">
+        <div class="stats-card" style="padding: 20px; background: #fdfaf2; border-color: #f7e6b7;">
+            <h3 class="stats-title">💾 데이터 백업 및 복구</h3>
+            <p style="font-size: 13px; color: #555; margin-bottom: 16px; line-height: 1.5;">
+                브라우저나 기기를 변경할 때 데이터를 안전하게 보관하세요.
+            </p>
+            <div class="backup-grid">
+                <button class="backup-btn" onclick="exportData()">데이터 파일로 저장 (백업)</button>
+                <label class="restore-btn" style="text-align:center; display:block; cursor:pointer;">
+                    백업 파일 불러오기
+                    <input type="file" id="import-file" style="display:none;" accept=".json" onchange="importData(event)">
+                </label>
+            </div>
+        </div>
+
+        <div class="stats-card" style="padding: 20px;">
+            <h3 class="stats-title">수입 및 결제일 설정</h3>
+            <div class="schedule-item">
+                <span style="font-weight:600; color:var(--income)">💰 급여 입금일</span>
+                <div>매월 <input type="number" id="payday-input" min="1" max="31" value="21" onchange="updateSchedule('payday', this.value)" style="width:50px; text-align:center;"> 일</div>
+            </div>
+            <div id="card-schedule-list"></div>
+        </div>
+
+        <div class="stats-card" style="padding: 20px;">
+            <h3 class="stats-title">📊 카테고리별 지출 예산 설정</h3>
+            <div id="category-budget-settings-list"></div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px; padding-top: 12px; border-top: 2px solid #ddd; font-weight: 700; font-size: 15px;">
+                <span>총 예산 합계</span>
+                <span id="total-budget-sum" style="color: var(--primary);">0원</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const STORAGE_KEY = 'smart_account_data_v24';
+
+    let entries = [];
+    let expCategories = [
+        { id: 'exp1', name: '식비', color: '#ff6b6b', budget: 300000 },
+        { id: 'exp2', name: '교통/통신', color: '#3498db', budget: 100000 },
+        { id: 'exp3', name: '쇼핑', color: '#9b59b6', budget: 200000 },
+        { id: 'exp4', name: '루이', color: '#f39c12', budget: 150000 },
+        { id: 'exp5', name: '기타', color: '#1abc9c', budget: 50000 }
+    ];
+    let incCategories = [
+        { id: 'inc1', name: '월급', color: '#2ecc71' },
+        { id: 'inc2', name: '부수입', color: '#e67e22' },
+        { id: 'inc3', name: '기타수입', color: '#34495e' }
+    ];
+    let payments = [
+        { id: 'pay1', name: '신용카드', type: 'card', payDate: 22 },
+        { id: 'pay3', name: '카카오페이(현금)', type: 'cash', payDate: null }
+    ];
+    let userSettings = { payday: 21 };
+    let manualCurrentBudget = null; 
+
+    function loadData() {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+            try {
+                const data = JSON.parse(saved);
+                if(data.entries) entries = data.entries;
+                if(data.expCategories) expCategories = data.expCategories;
+                if(data.incCategories) incCategories = data.incCategories;
+                if(data.payments) payments = data.payments;
+                if(data.userSettings) userSettings = data.userSettings;
+                if(data.manualCurrentBudget !== undefined) manualCurrentBudget = data.manualCurrentBudget;
+            } catch (e) {
+                console.error("데이터 로드 실패", e);
+            }
+        }
+    }
+
+    function saveData() {
+        const data = { entries, expCategories, incCategories, payments, userSettings, manualCurrentBudget };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    }
+
+    function exportData() {
+        const data = { entries, expCategories, incCategories, payments, userSettings, manualCurrentBudget };
+        const dataStr = JSON.stringify(data);
+        const blob = new Blob([dataStr], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = '가계부_백업_' + getLocalDateString(new Date()) + '.json';
+        a.click();
+        URL.revokeObjectURL(url);
+    }
+
+    function importData(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const data = JSON.parse(e.target.result);
+                if(data.entries) entries = data.entries;
+                if(data.expCategories) expCategories = data.expCategories;
+                if(data.incCategories) incCategories = data.incCategories;
+                if(data.payments) payments = data.payments;
+                if(data.userSettings) userSettings = data.userSettings;
+                if(data.manualCurrentBudget !== undefined) manualCurrentBudget = data.manualCurrentBudget;
+                
+                saveData();
+                alert("데이터가 성공적으로 복구되었습니다!");
+                location.reload();
+            } catch (err) {
+                alert("파일 형식이 올바르지 않습니다.");
+            }
+        };
+        reader.readAsText(file);
+    }
+
+    let editingId = null; 
+    let categoryChartInst = null;
+    let weeklyChartInst = null;
+    let monthlyChartInst = null;
+    let today = new Date();
+    
+    let currentYear = today.getFullYear();
+    let currentMonth = today.getMonth(); 
+    let selectedDateStr = null;
+    
+    const colorPalette = ['#e74c3c', '#3498db', '#2ecc71', '#9b59b6', '#f39c12', '#1abc9c', '#e67e22', '#34495e', '#d35400', '#16a085', '#8e44ad', '#27ae60'];
+
+    function getLocalDateString(d) {
+        const offset = d.getTimezoneOffset();
+        const localDate = new Date(d.getTime() - (offset*60*1000));
+        return localDate.toISOString().split('T')[0];
+    }
+
+    loadData();
+    document.getElementById('date').value = getLocalDateString(today);
+    
+    toggleFormType();
+    renderScheduleSettings();
+    renderCategoryBudgetSettings();
+    updateUI();
+
+    function switchTab(tab) {
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        document.querySelectorAll('.section-content').forEach(sec => sec.classList.remove('active-section'));
+        if(tab === 'dashboard') {
+            document.querySelectorAll('.tab-btn')[0].classList.add('active');
+            document.getElementById('dashboard-section').classList.add('active-section');
+        } else if(tab === 'analytics') {
+            document.querySelectorAll('.tab-btn')[1].classList.add('active');
+            document.getElementById('analytics-section').classList.add('active-section');
+            renderAnalytics();
+        } else {
+            document.querySelectorAll('.tab-btn')[2].classList.add('active');
+            document.getElementById('schedule-section').classList.add('active-section');
+            renderCategoryBudgetSettings();
+        }
+    }
+
+    function toggleFormType() {
+        const isExpense = document.getElementById('type-expense').checked;
+        document.getElementById('payment-container').style.display = isExpense ? 'block' : 'none';
+        document.getElementById('fixed-expense-container').style.display = isExpense ? 'flex' : 'none';
+        document.getElementById('installment-toggle-wrapper').style.display = isExpense ? 'flex' : 'none';
+        if (!isExpense) {
+            document.getElementById('is-installment').checked = false;
+            document.getElementById('installment-months-container').style.display = 'none';
+            document.getElementById('is-fixed').checked = false;
+            document.getElementById('fixed-options-container').style.display = 'none';
+        }
+        renderSelections(isExpense);
+    }
+
+    function toggleInstallment() {
+        const isChecked = document.getElementById('is-installment').checked;
+        document.getElementById('installment-months-container').style.display = isChecked ? 'block' : 'none';
+    }
+
+    function toggleFixedOptions() {
+        const isFixed = document.getElementById('is-fixed').checked;
+        document.getElementById('fixed-options-container').style.display = isFixed ? 'block' : 'none';
+    }
+
+    function renderSelections(isExpense) {
+        const catList = document.getElementById('category-list');
+        catList.innerHTML = '';
+        const targetCats = isExpense ? expCategories : incCategories;
+        
+        targetCats.forEach((cat, idx) => {
+            catList.innerHTML += `
+                <div class="selection-item">
+                    <input type="radio" id="${cat.id}" name="category" value="${cat.id}" ${idx === 0 ? 'checked' : ''}>
+                    <label for="${cat.id}" onclick="setTimeout(updateStyles, 10)">
+                        ${cat.name}
+                        <input type="color" value="${cat.color}" oninput="changeCategoryColor('${cat.id}', this.value, ${isExpense})" title="색상변경" style="width:12px; height:12px; border:none; background:none; vertical-align:middle; cursor:pointer; margin-left:3px; padding:0;">
+                    </label>
+                </div>`;
+        });
+        
+        catList.innerHTML += `<div class="action-btns-wrapper"><button type="button" class="action-btn-small" onclick="addCategory(${isExpense})">+ 추가</button><button type="button" class="action-btn-small del-btn-small" onclick="deleteSelectedCategory(${isExpense})">- 삭제</button></div>`;
+
+        if (isExpense) {
+            const payList = document.getElementById('payment-list');
+            payList.innerHTML = '';
+            payments.forEach((pay, idx) => {
+                payList.innerHTML += `<div class="selection-item"><input type="radio" id="${pay.id}" name="payment" value="${pay.id}" ${idx === 0 ? 'checked' : ''}><label for="${pay.id}" onclick="setTimeout(updateStyles, 10)">${pay.name}</label></div>`;
+            });
+            payList.innerHTML += `
+                <div class="action-btns-wrapper">
+                    <button type="button" class="action-btn-small" onclick="addPayment()">+ 추가</button>
+                    <button type="button" class="action-btn-small" onclick="editSelectedPayment()">수정</button>
+                    <button type="button" class="action-btn-small del-btn-small" onclick="deleteSelectedPayment()">- 삭제</button>
+                </div>`;
+        }
+        updateStyles();
+    }
+
+    function changeCategoryColor(catId, newColor, isExpense) {
+        const targetCats = isExpense ? expCategories : incCategories;
+        const cat = targetCats.find(c => c.id === catId);
+        if (cat) {
+            cat.color = newColor;
+            saveData();
+            updateStyles();
+            if(categoryChartInst) updateCategoryChart();
+        }
+    }
+
+    function updateStyles() {
+        document.querySelectorAll('input[name="category"]').forEach(radio => {
+            const label = document.querySelector(`label[for="${radio.id}"]`);
+            const targetCats = document.getElementById('type-expense').checked ? expCategories : incCategories;
+            const cat = targetCats.find(c => c.id === radio.value);
+            if (radio.checked && cat) { label.style.background = cat.color; label.style.color = '#fff'; label.style.borderColor = cat.color; } 
+            else { label.style.background = '#f8f9fa'; label.style.color = '#555'; label.style.borderColor = 'var(--border)'; }
+        });
+        if (document.getElementById('type-expense').checked) {
+            document.querySelectorAll('input[name="payment"]').forEach(radio => {
+                const label = document.querySelector(`label[for="${radio.id}"]`);
+                if (radio.checked) { label.style.background = '#34495e'; label.style.color = '#fff'; label.style.borderColor = '#34495e'; } 
+                else { label.style.background = '#f8f9fa'; label.style.color = '#555'; label.style.borderColor = 'var(--border)'; }
+            });
+        }
+    }
+
+    function getUniqueColor() {
+        const existingColors = new Set([...expCategories, ...incCategories].map(c => c.color));
+        for (let color of colorPalette) {
+            if (!existingColors.has(color)) return color;
+        }
+        return '#' + Math.floor(Math.random()*16777215).toString(16);
+    }
+
+    function addCategory(isExpense) {
+        const name = prompt("새로운 카테고리 이름을 입력하세요:");
+        if (name && name.trim()) {
+            const newCat = { id: 'cat' + Date.now(), name: name.trim(), color: getUniqueColor() };
+            if(isExpense) {
+                const budgetStr = prompt(`'${name}'의 목표 금액(예산)을 입력하세요:`, "0");
+                newCat.budget = parseInt(budgetStr.replace(/[^0-9]/g, '')) || 0;
+                expCategories.push(newCat);
+            } else { incCategories.push(newCat); }
+            saveData();
+            renderSelections(isExpense); renderCategoryBudgetSettings(); updateUI();
+        }
+    }
+
+    function deleteSelectedCategory(isExpense) {
+        const selectedRadio = document.querySelector('input[name="category"]:checked');
+        if(!selectedRadio) return;
+        const catId = selectedRadio.value;
+        const targetCats = isExpense ? expCategories : incCategories;
+        const cat = targetCats.find(c => c.id === catId);
+        
+        if(targetCats.length <= 1) return alert("최소 1개의 카테고리는 남아있어야 합니다.");
+        if(confirm(`'${cat.name}' 카테고리를 정말 삭제하시겠습니까?\n(기존 내역의 분류는 유지됩니다)`)) {
+            if(isExpense) { expCategories = expCategories.filter(c => c.id !== catId); } 
+            else { incCategories = incCategories.filter(c => c.id !== catId); }
+            saveData();
+            renderSelections(isExpense); renderCategoryBudgetSettings(); updateUI();
+        }
+    }
+
+    function addPayment() {
+        const name = prompt("결제 수단 이름을 입력하세요 (예: 신한카드):");
+        if (name && name.trim()) {
+            const isCard = confirm("신용/체크카드인가요?\n(확인: 카드, 취소: 현금/페이)");
+            let payDate = null;
+            if(isCard) payDate = parseInt(prompt("결제일(출금일)을 숫자로 입력하세요 (예: 22):")) || 22;
+            payments.push({ id: 'pay' + Date.now(), name: name.trim(), type: isCard ? 'card' : 'cash', payDate: payDate });
+            saveData();
+            renderSelections(true); renderScheduleSettings();
+        }
+    }
+
+    function editSelectedPayment() {
+        const selectedRadio = document.querySelector('input[name="payment"]:checked');
+        if(!selectedRadio) return alert("수정할 결제수단을 선택해주세요.");
+        const payId = selectedRadio.value;
+        const pay = payments.find(p => p.id === payId);
+        
+        const newName = prompt("결제 수단 이름을 수정하세요:", pay.name);
+        if(newName && newName.trim()) {
+            pay.name = newName.trim();
+            if(pay.type === 'card') {
+                const newDate = prompt("결제일(출금일)을 수정하세요:", pay.payDate);
+                if(newDate) pay.payDate = parseInt(newDate) || pay.payDate;
+            }
+            saveData();
+            renderSelections(true); renderScheduleSettings(); updateUI();
+        }
+    }
+
+    function deleteSelectedPayment() {
+        const selectedRadio = document.querySelector('input[name="payment"]:checked');
+        if(!selectedRadio) return alert("삭제할 결제수단을 선택해주세요.");
+        const payId = selectedRadio.value;
+        const pay = payments.find(p => p.id === payId);
+        
+        if(payments.length <= 1) return alert("최소 1개의 결제수단은 남아있어야 합니다.");
+        if(confirm(`'${pay.name}' 결제수단을 삭제하시겠습니까?`)) {
+            payments = payments.filter(p => p.id !== payId);
+            saveData();
+            renderSelections(true); renderScheduleSettings(); updateUI();
+        }
+    }
+
+    function renderCategoryBudgetSettings() {
+        const list = document.getElementById('category-budget-settings-list');
+        const sumEl = document.getElementById('total-budget-sum');
+        if(!list || !sumEl) return;
+        
+        list.innerHTML = '';
+        let totalBudgetSum = 0;
+
+        expCategories.forEach(cat => {
+            totalBudgetSum += (cat.budget || 0);
+            list.innerHTML += `
+                <div class="budget-setting-row">
+                    <div><span style="display:inline-block; width:12px; height:12px; border-radius:50%; background:${cat.color}; margin-right:6px;"></span><strong>${cat.name}</strong></div>
+                    <div>
+                        <input type="number" class="budget-setting-input" value="${cat.budget}" onchange="updateCategoryBudgetViaSettings('${cat.id}', this.value)"> 원
+                    </div>
+                </div>`;
+        });
+
+        sumEl.innerText = `${totalBudgetSum.toLocaleString()}원`;
+    }
+
+    function updateCategoryBudgetViaSettings(catId, val) {
+        const cat = expCategories.find(c => c.id === catId);
+        if(cat) {
+            cat.budget = parseInt(val.replace(/[^0-9]/g, '')) || 0;
+            saveData();
+            updateDashboardBudgets();
+            renderCategoryBudgetSettings();
+            updateDashboardStats();
+        }
+    }
+
+    function editCurrentBudget() {
+        let totals = calculateCurrentMonthTotals();
+        let defaultBudget = totals.income + totals.salary - totals.expense;
+        let displayVal = manualCurrentBudget !== null ? manualCurrentBudget : defaultBudget;
+        const val = prompt(`수정할 '현재 예산'을 입력하세요 (숫자만).\n\n※ 빈칸으로 두고 확인을 누르면 다시 자동계산으로 돌아갑니다.`, displayVal);
+        if(val === null) return; 
+        if(val.trim() === '') manualCurrentBudget = null; 
+        else manualCurrentBudget = parseInt(val.replace(/[^0-9\-]/g, '')) || 0;
+        saveData();
+        updateDashboardStats();
+    }
+
+    document.getElementById('entry-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const type = document.getElementById('type-expense').checked ? 'expense' : 'income';
+        const totalAmount = parseInt(document.getElementById('amount').value);
+        if (totalAmount <= 0) return alert("올바른 금액을 입력하세요.");
+        
+        const startDateVal = document.getElementById('date').value;
+        const isInstallment = type === 'expense' && document.getElementById('is-installment').checked;
+        const months = isInstallment ? parseInt(document.getElementById('installment-months').value) || 1 : 1;
+        const baseDate = new Date(startDateVal);
+
+        const categoryId = document.querySelector('input[name="category"]:checked').value;
+        const paymentId = type === 'expense' ? document.querySelector('input[name="payment"]:checked').value : null;
+        const place = document.getElementById('place').value;
+        const item = document.getElementById('item').value;
+        const isFixed = type === 'expense' ? document.getElementById('is-fixed').checked : false;
+        const isRepeating = isFixed && document.getElementById('is-repeating').checked;
+        const repeatCycle = isRepeating ? document.getElementById('repeat-cycle').value : null;
+
+        if (editingId) {
+            const index = entries.findIndex(e => e.id === editingId);
+            if (index !== -1) {
+                entries[index] = {
+                    id: editingId, type, date: startDateVal, categoryId, paymentId, place, item, amount: totalAmount, isFixed, isRepeating, repeatCycle
+                };
+            }
+            cancelEdit();
+        } else {
+            const splitAmount = Math.floor(totalAmount / months);
+            const remainder = totalAmount % months; 
+
+            for (let i = 0; i < months; i++) {
+                let targetDate = new Date(baseDate.getFullYear(), baseDate.getMonth() + i, baseDate.getDate());
+                let amountToApply = splitAmount + (i === 0 ? remainder : 0);
+                let itemLabel = months > 1 ? `${item} (${i+1}/${months}회차)` : item;
+
+                const entryData = {
+                    id: Date.now() + i, 
+                    type: type,
+                    date: getLocalDateString(targetDate),
+                    categoryId: categoryId,
+                    paymentId: paymentId,
+                    place: place,
+                    item: itemLabel,
+                    amount: amountToApply,
+                    isFixed: isFixed,
+                    isRepeating: isRepeating,
+                    repeatCycle: repeatCycle
+                };
+                entries.unshift(entryData);
+            }
+        }
+
+        saveData();
+        currentYear = baseDate.getFullYear();
+        currentMonth = baseDate.getMonth();
+        selectDate(startDateVal); 
+        updateUI();
+    });
+
+    function editEntry(id) {
+        const ent = entries.find(e => e.id === id); editingId = id;
+        document.getElementById(`type-${ent.type}`).click(); 
+        document.getElementById('date').value = ent.date; document.getElementById('place').value = ent.place; document.getElementById('amount').value = ent.amount; document.getElementById('item').value = ent.item;
+        setTimeout(() => {
+            const catEl = document.getElementById(ent.categoryId); if(catEl) catEl.checked = true;
+            if(ent.type === 'expense') {
+                const payEl = document.getElementById(ent.paymentId); if(payEl) payEl.checked = true;
+                document.getElementById('is-fixed').checked = ent.isFixed;
+                if(ent.isFixed) {
+                    document.getElementById('fixed-options-container').style.display = 'block';
+                    document.getElementById('is-repeating').checked = ent.isRepeating || false;
+                    if(ent.repeatCycle) document.getElementById('repeat-cycle').value = ent.repeatCycle;
+                }
+            }
+            updateStyles();
+        }, 50);
+        document.getElementById('submit-btn').innerText = '수정 내용 저장'; document.getElementById('cancel-edit-btn').style.display = 'block'; window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function cancelEdit() {
+        editingId = null; document.getElementById('place').value = ''; document.getElementById('item').value = ''; document.getElementById('amount').value = ''; document.getElementById('is-fixed').checked = false;
+        document.getElementById('is-installment').checked = false;
+        document.getElementById('installment-months-container').style.display = 'none';
+        document.getElementById('is-repeating').checked = false;
+        document.getElementById('fixed-options-container').style.display = 'none';
+        document.getElementById('submit-btn').innerText = '내역 추가하기'; document.getElementById('cancel-edit-btn').style.display = 'none';
+    }
+
+    function deleteEntry(id) {
+        if(confirm("정말 이 내역을 삭제하시겠습니까?")) {
+            entries = entries.filter(e => e.id !== id);
+            if(editingId === id) cancelEdit();
+            saveData();
+            updateUI();
+            if(selectedDateStr) selectDate(selectedDateStr);
+        }
+    }
+
+    function updateUI() {
+        renderCalendar(); updateDashboardStats(); updateDashboardBudgets(); renderAnalytics(); renderFixedExpenses();
+    }
+
+    function changeMonth(offset) {
+        currentMonth += offset;
+        if (currentMonth > 11) { currentMonth = 0; currentYear++; }
+        else if (currentMonth < 0) { currentMonth = 11; currentYear--; }
+        renderCalendar();
+        closeDailyDetails();
+    }
+
+    let touchStartX = 0;
+    let touchEndX = 0;
+    const calendarWrapper = document.getElementById('calendar-wrapper');
+
+    calendarWrapper.addEventListener('touchstart', e => {
+        touchStartX = e.changedTouches[0].screenX;
+    }, {passive: true});
+
+    calendarWrapper.addEventListener('touchend', e => {
+        touchEndX = e.changedTouches[0].screenX;
+        handleSwipe();
+    }, {passive: true});
+
+    function handleSwipe() {
+        const threshold = 50; 
+        if (touchEndX < touchStartX - threshold) { changeMonth(1); }
+        if (touchEndX > touchStartX + threshold) { changeMonth(-1); }
+    }
+
+    function renderCalendar() {
+        const grid = document.getElementById('calendar-grid');
+        const headersHtml = `
+            <div class="cal-day-header" style="color:#e74c3c;">일</div>
+            <div class="cal-day-header">월</div>
+            <div class="cal-day-header">화</div>
+            <div class="cal-day-header">수</div>
+            <div class="cal-day-header">목</div>
+            <div class="cal-day-header">금</div>
+            <div class="cal-day-header" style="color:#3498db;">토</div>
+        `;
+        grid.innerHTML = headersHtml;
+        document.getElementById('calendar-month-label').innerText = `${currentYear}년 ${currentMonth + 1}월`;
+
+        const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+        const lastDate = new Date(currentYear, currentMonth + 1, 0).getDate();
+        const todayStr = getLocalDateString(today);
+
+        for (let i = 0; i < firstDay; i++) {
+            grid.innerHTML += `<div class="cal-day" style="background:#fdfdfd; opacity:0.3; cursor:default;"></div>`;
+        }
+
+        for (let day = 1; day <= lastDate; day++) {
+            const mStr = String(currentMonth + 1).padStart(2, '0');
+            const dStr = String(day).padStart(2, '0');
+            const dateStr = `${currentYear}-${mStr}-${dStr}`;
+            
+            const dayEntries = entries.filter(e => e.date === dateStr);
+            const isToday = dateStr === todayStr;
+            const isSelected = dateStr === selectedDateStr;
+
+            let dayInc = 0;
+            let dayExp = 0;
+            const catMap = {};
+
+            dayEntries.forEach(ent => {
+                if(ent.type === 'income') dayInc += ent.amount;
+                if(ent.type === 'expense') dayExp += ent.amount;
+                
+                const key = ent.type + '_' + ent.categoryId;
+                if(!catMap[key]) {
+                    catMap[key] = {
+                        type: ent.type,
+                        categoryId: ent.categoryId,
+                        amount: 0
+                    };
+                }
+                catMap[key].amount += ent.amount;
+            });
+
+            const aggregatedEntries = Object.values(catMap);
+            aggregatedEntries.sort((a,b) => b.amount - a.amount);
+
+            let html = `<div class="cal-day ${isToday ? 'today' : ''} ${isSelected ? 'selected' : ''}" onclick="selectDate('${dateStr}')">`;
+            html += `<div class="cal-date">${day}</div><div class="cal-entries">`;
+            
+            aggregatedEntries.slice(0, 3).forEach(group => {
+                const cat = group.type==='expense'?expCategories.find(c=>c.id===group.categoryId):incCategories.find(c=>c.id===group.categoryId);
+                const catName = cat ? cat.name : '기타';
+                const catColor = cat ? cat.color : '#888';
+                const amtClass = group.type === 'expense' ? 'cal-amt-exp' : 'cal-amt-inc';
+                const sign = group.type === 'expense' ? '-' : '+';
+                const shortAmt = (group.amount / 10000).toFixed(1).replace('.0', '') + '만';
+
+                html += `
+                    <div class="cal-item-row">
+                        <span class="cal-cat-name" style="color:${catColor};">${catName}</span>
+                        <span class="${amtClass}">${sign}${shortAmt}</span>
+                    </div>`;
+            });
+            if(aggregatedEntries.length > 3) html += `<div style="font-size:8px; text-align:center; color:#888;">+${aggregatedEntries.length - 3}항목</div>`;
+            html += `</div>`;
+
+            if(dayEntries.length > 0) {
+                let expText = dayExp > 0 ? `-${(dayExp / 10000).toFixed(1).replace('.0', '')}만` : '';
+                let net = dayInc - dayExp;
+                let netText = (net >= 0 ? '+' : '') + (net / 10000).toFixed(1).replace('.0', '') + '만';
+                
+                html += `
+                    <div class="cal-day-summary">
+                        <span class="cal-summary-net">${netText}</span>
+                        ${dayExp > 0 ? `<span class="cal-summary-exp">${expText}</span>` : ''}
+                    </div>`;
+            }
+
+            grid.innerHTML += html + `</div>`;
+        }
+    }
+
+    function selectDate(dateStr) {
+        selectedDateStr = dateStr; renderCalendar(); 
+        const listEl = document.getElementById('daily-entry-list');
+        document.getElementById('daily-detail-title').innerText = `${parseInt(dateStr.split('-')[1])}월 ${parseInt(dateStr.split('-')[2])}일 상세 내역`;
+        
+        listEl.innerHTML = '';
+        const dayEntries = entries.filter(e => e.date === dateStr);
+        if (dayEntries.length === 0) listEl.innerHTML = '<li class="empty-state">해당 일자에 입력된 내역이 없습니다.</li>';
+        else {
+            dayEntries.forEach(ent => {
+                const cat = ent.type==='expense'?expCategories.find(c=>c.id===ent.categoryId):incCategories.find(c=>c.id===ent.categoryId);
+                let badges = `<span class="badge" style="background-color: ${cat?.color || '#ccc'}">${cat?.name || '삭제됨'}</span>`;
+                if (ent.type==='expense') {
+                    const pay = payments.find(p => p.id === ent.paymentId);
+                    badges += `<span class="badge" style="background-color: #34495e">${pay?.name || '삭제됨'}</span>`;
+                    if (ent.isFixed) badges += `<span class="badge badge-fixed">고정비</span>`;
+                }
+                listEl.innerHTML += `<li class="expense-item"><div style="flex: 1;"><div class="item-badges">${badges}</div><div class="item-main-text">${ent.place}</div><div class="item-sub-text">${ent.item}</div></div><div><span class="${ent.type==='expense'?'amount-exp':'amount-inc'}">${ent.type==='expense'?'-':'+'}${ent.amount.toLocaleString()}원</span><div class="item-actions"><button type="button" class="action-btn edit-btn" onclick="editEntry(${ent.id})">수정</button><button type="button" class="action-btn delete-btn" onclick="deleteEntry(${ent.id})">삭제</button></div></div></li>`;
+            });
+        }
+        document.getElementById('daily-detail-section').style.display = 'block';
+    }
+
+    function closeDailyDetails() { selectedDateStr = null; document.getElementById('daily-detail-section').style.display = 'none'; renderCalendar(); }
+
+    function calculateCurrentMonthTotals() {
+        const curMonth = today.getMonth() + 1, curYear = today.getFullYear();
+        let totalInc = 0, lastMonthSalary = 0, totalExp = 0;
+        
+        let targetMonth = curMonth - 1;
+        let targetYear = curYear;
+        if (targetMonth === 0) { targetMonth = 12; targetYear -= 1; }
+
+        document.getElementById('salary-label-text').innerText = `${targetMonth}월 월급 (지난달)`;
+
+        entries.forEach(ent => {
+            const d = new Date(ent.date);
+            const eMonth = d.getMonth() + 1;
+            const eYear = d.getFullYear();
+
+            if (eMonth === curMonth && eYear === curYear) {
+                if (ent.type === 'income') totalInc += ent.amount;
+                if (ent.type === 'expense') totalExp += ent.amount;
+            }
+
+            if (eMonth === targetMonth && eYear === targetYear && ent.type === 'income') {
+                const cat = incCategories.find(c => c.id === ent.categoryId);
+                if (cat && cat.name === '월급') {
+                    lastMonthSalary += ent.amount;
+                }
+            }
+        });
+        return { income: totalInc, salary: lastMonthSalary, expense: totalExp };
+    }
+
+    function updateDashboardStats() {
+        document.getElementById('current-month-title').innerText = `${today.getMonth() + 1}월 요약`;
+        let totals = calculateCurrentMonthTotals();
+        document.getElementById('dash-income').textContent = totals.income.toLocaleString();
+        document.getElementById('dash-salary').textContent = totals.salary.toLocaleString();
+        document.getElementById('dash-expense').textContent = totals.expense.toLocaleString();
+        
+        let totalTargetBudget = 0;
+        expCategories.forEach(c => totalTargetBudget += (c.budget || 0));
+        document.getElementById('dash-total-budget').textContent = `${totalTargetBudget.toLocaleString()}원`;
+
+        let availableBudget = totals.income + totals.salary - totalTargetBudget;
+        const availEl = document.getElementById('dash-available-budget');
+        availEl.textContent = `${availableBudget.toLocaleString()}원`;
+        availEl.style.color = availableBudget < 0 ? 'var(--expense)' : 'var(--income)';
+
+        let diffBudget = totalTargetBudget - totals.expense;
+        const diffEl = document.getElementById('dash-budget-diff');
+        diffEl.textContent = `${diffBudget >= 0 ? '+' : ''}${diffBudget.toLocaleString()}원`;
+        diffEl.style.color = diffBudget < 0 ? 'var(--expense)' : 'var(--primary)';
+
+        let defaultBudget = totals.income + totals.salary - totals.expense;
+        let displayBudget = manualCurrentBudget !== null ? manualCurrentBudget : defaultBudget;
+        
+        document.getElementById('dash-balance').textContent = displayBudget.toLocaleString();
+        document.getElementById('dash-balance').style.color = displayBudget < 0 ? 'var(--expense)' : 'var(--primary)';
+    }
+
+    function updateDashboardBudgets() {
+        const budgetContainer = document.getElementById('dashboard-budget-container'); 
+        budgetContainer.innerHTML = '';
+        
+        const curMonth = today.getMonth() + 1, curYear = today.getFullYear();
+        let catSpends = {}; expCategories.forEach(c => catSpends[c.id] = 0);
+        
+        entries.forEach(ent => {
+            if(ent.type === 'expense') {
+                const d = new Date(ent.date);
+                if (d.getMonth() + 1 === curMonth && d.getFullYear() === curYear) {
+                    if(catSpends[ent.categoryId] !== undefined) catSpends[ent.categoryId] += ent.amount; 
+                }
+            }
+        });
+
+        let tableHtml = `
+            <table class="budget-table">
+                <thead>
+                    <tr>
+                        <th>카테고리</th>
+                        <th>사용 / 목표</th>
+                        <th>남은 예산</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+
+        let hasValidBudget = false;
+        let totalSpentSum = 0;
+        let totalBudgetSum = 0;
+        let totalDiffSum = 0;
+
+        expCategories.forEach(cat => {
+            if(cat.budget > 0) {
+                hasValidBudget = true;
+                const spent = catSpends[cat.id];
+                const diff = cat.budget - spent;
+                const isOver = diff < 0;
+
+                totalSpentSum += spent;
+                totalBudgetSum += cat.budget;
+                totalDiffSum += diff;
+                
+                tableHtml += `
+                    <tr>
+                        <td><span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:${cat.color}; margin-right:6px;"></span>${cat.name}</td>
+                        <td>${spent.toLocaleString()} / ${cat.budget.toLocaleString()}</td>
+                        <td class="${isOver ? 'table-warn' : 'table-safe'}">${isOver ? (Math.abs(diff).toLocaleString() + ' 초과') : (diff.toLocaleString() + ' 남음')}</td>
+                    </tr>
+                `;
+            }
+        });
+
+        let totalIsOver = totalDiffSum < 0;
+        tableHtml += `
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td>합계</td>
+                        <td>${totalSpentSum.toLocaleString()} / ${totalBudgetSum.toLocaleString()}</td>
+                        <td class="${totalIsOver ? 'table-warn' : 'table-safe'}">${totalIsOver ? (Math.abs(totalDiffSum).toLocaleString() + ' 초과') : (totalDiffSum.toLocaleString() + ' 남음')}</td>
+                    </tr>
+                </tfoot>
+            </table>
+        `;
+
+        if (!hasValidBudget) {
+            budgetContainer.innerHTML = '<div class="empty-state">목표 예산이 설정된 카테고리가 없습니다.</div>';
+        } else {
+            budgetContainer.innerHTML = tableHtml;
+        }
+    }
+
+    function updateCategoryChart() {
+        const curMonth = today.getMonth() + 1, curYear = today.getFullYear();
+        let catSpends = {}; expCategories.forEach(c => catSpends[c.id] = 0);
+        entries.forEach(ent => {
+            if(ent.type === 'expense') {
+                const d = new Date(ent.date);
+                if (d.getMonth() + 1 === curMonth && d.getFullYear() === curYear) if(catSpends[ent.categoryId] !== undefined) catSpends[ent.categoryId] += ent.amount; 
+            }
+        });
+
+        let totalExpense = 0;
+        expCategories.forEach(cat => {
+            totalExpense += catSpends[cat.id];
+        });
+
+        let sortedCats = [...expCategories].sort((a, b) => catSpends[b.id] - catSpends[a.id]);
+
+        let labels = [], data = [], bgColors = [];
+        sortedCats.forEach(cat => {
+            labels.push(cat.name); 
+            data.push(catSpends[cat.id]); 
+            bgColors.push(cat.color);
+        });
+
+        if(categoryChartInst) categoryChartInst.destroy();
+        categoryChartInst = new Chart(document.getElementById('categoryChart').getContext('2d'), {
+            type: 'doughnut', 
+            data: { 
+                labels: labels, 
+                datasets: [{ data: data, backgroundColor: bgColors, borderWidth: 2, borderColor: '#fff' }] 
+            },
+            options: { 
+                responsive: true, 
+                maintainAspectRatio: false, 
+                plugins: { 
+                    legend: { 
+                        position: 'right', 
+                        labels: { 
+                            font: { family: 'Pretendard', size: 13 }, 
+                            padding: 15,
+                            generateLabels: function(chart) {
+                                const data = chart.data;
+                                if (data.labels.length && data.datasets.length) {
+                                    return data.labels.map(function(label, i) {
+                                        const value = data.datasets[0].data[i];
+                                        const percentage = totalExpense > 0 ? ((value / totalExpense) * 100).toFixed(1) : 0;
+                                        return {
+                                            text: `${label}: ${value.toLocaleString()}원 (${percentage}%)`,
+                                            fillStyle: data.datasets[0].backgroundColor[i],
+                                            hidden: false,
+                                            index: i
+                                        };
+                                    });
+                                }
+                                return [];
+                            }
+                        } 
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.label || '';
+                                let value = context.raw || 0;
+                                let percentage = totalExpense > 0 ? ((value / totalExpense) * 100).toFixed(1) : 0;
+                                return ` ${label}: ${value.toLocaleString()}원 (${percentage}%)`;
+                            }
+                        }
+                    }
+                } 
+            }
+        });
+    }
+
+    function populateCategorySelects() {
+        const weeklySelect = document.getElementById('weekly-category-select');
+        const monthlySelect = document.getElementById('monthly-category-select');
+        
+        const currentWeeklyVal = weeklySelect.value;
+        const currentMonthlyVal = monthlySelect.value;
+
+        let optionsHtml = '<option value="all">전체 카테고리</option>';
+        expCategories.forEach(cat => {
+            optionsHtml += `<option value="${cat.id}">${cat.name}</option>`;
+        });
+
+        weeklySelect.innerHTML = optionsHtml;
+        monthlySelect.innerHTML = optionsHtml;
+
+        weeklySelect.value = currentWeeklyVal;
+        monthlySelect.value = currentMonthlyVal;
+    }
+
+    // 💡 지출 추이 그래프 산출 시 고정비(isFixed) 제외
+    function updateWeeklyChart() {
+        const curMonth = today.getMonth(), curYear = today.getFullYear();
+        const selectedCat = document.getElementById('weekly-category-select').value;
+        let weeklyTotals = [0, 0, 0, 0, 0];
+        
+        entries.forEach(ent => {
+            if(ent.type === 'expense' && !ent.isFixed) { // 고정비 제외
+                const d = new Date(ent.date);
+                if(d.getFullYear() === curYear && d.getMonth() === curMonth) {
+                    if(selectedCat === 'all' || ent.categoryId === selectedCat) {
+                        const day = d.getDate();
+                        if(day <= 7) weeklyTotals[0] += ent.amount; else if(day <= 14) weeklyTotals[1] += ent.amount; else if(day <= 21) weeklyTotals[2] += ent.amount; else if(day <= 28) weeklyTotals[3] += ent.amount; else weeklyTotals[4] += ent.amount;
+                    }
+                }
+            }
+        });
+
+        let totalMonthlyBudget = 0;
+        if(selectedCat === 'all') {
+            expCategories.forEach(c => totalMonthlyBudget += (c.budget || 0));
+        } else {
+            const cat = expCategories.find(c => c.id === selectedCat);
+            if(cat) totalMonthlyBudget = cat.budget || 0;
+        }
+        let weeklyBudgetLine = Math.round(totalMonthlyBudget / 4.3);
+
+        if(weeklyChartInst) weeklyChartInst.destroy();
+        weeklyChartInst = new Chart(document.getElementById('weeklyChart').getContext('2d'), {
+            type: 'bar', 
+            data: { 
+                labels: ['1주차', '2주차', '3주차', '4주차', '5주차'], 
+                datasets: [
+                    { label: '주별 지출(고정비 제외)', data: weeklyTotals, backgroundColor: '#7f8c8d', borderRadius: 8, barThickness: 32 },
+                    { label: '주간 예산선', data: [weeklyBudgetLine, weeklyBudgetLine, weeklyBudgetLine, weeklyBudgetLine, weeklyBudgetLine], type: 'line', borderColor: '#e74c3c', borderWidth: 3, borderDash: [5, 5], pointRadius: 0 }
+                ] 
+            },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: true, position: 'bottom', labels: { font: { family: 'Pretendard', size: 11 } } } }, scales: { y: { beginAtZero: true } } }
+        });
+    }
+
+    // 💡 지출 추이 그래프 산출 시 고정비(isFixed) 제외
+    function updateMonthlyChart() {
+        const curMonth = today.getMonth(), curYear = today.getFullYear();
+        const selectedCat = document.getElementById('monthly-category-select').value;
+        let monthlyTotals = [], monthLabels = [];
+        
+        let targetMonthlyBudget = 0;
+        if(selectedCat === 'all') {
+            expCategories.forEach(c => targetMonthlyBudget += (c.budget || 0));
+        } else {
+            const cat = expCategories.find(c => c.id === selectedCat);
+            if(cat) targetMonthlyBudget = cat.budget || 0;
+        }
+
+        for(let i=3; i>=0; i--) {
+            let targetDate = new Date(curYear, curMonth - i, 1);
+            let mY = targetDate.getFullYear(), mM = targetDate.getMonth(), mTotal = 0;
+            entries.forEach(ent => {
+                if(ent.type === 'expense' && !ent.isFixed) { // 고정비 제외
+                    const d = new Date(ent.date);
+                    if(d.getFullYear() === mY && d.getMonth() === mM) {
+                        if(selectedCat === 'all' || ent.categoryId === selectedCat) mTotal += ent.amount;
+                    }
+                }
+            });
+            monthLabels.push(`${mM+1}월`); monthlyTotals.push(mTotal);
+        }
+
+        if(monthlyChartInst) monthlyChartInst.destroy();
+        monthlyChartInst = new Chart(document.getElementById('monthlyChart').getContext('2d'), {
+            type: 'bar', 
+            data: { 
+                labels: monthLabels, 
+                datasets: [
+                    { label: '월별 지출(고정비 제외)', data: monthlyTotals, backgroundColor: '#7f8c8d', borderRadius: 8, barThickness: 36 },
+                    { label: '월 목표 예산선', data: [targetMonthlyBudget, targetMonthlyBudget, targetMonthlyBudget, targetMonthlyBudget], type: 'line', borderColor: '#e74c3c', borderWidth: 3, borderDash: [5, 5], pointRadius: 0 }
+                ] 
+            },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: true, position: 'bottom', labels: { font: { family: 'Pretendard', size: 11 } } } }, scales: { y: { beginAtZero: true } } }
+        });
+    }
+
+    function renderAnalytics() {
+        const curDate = today.getDate(), curMonth = today.getMonth(), curYear = today.getFullYear();
+        let startYear = curYear, startMonth = curMonth - 1, endYear = curYear, endMonth = curMonth;
+
+        if (curDate > 22) { startMonth = curMonth; endMonth = curMonth + 1; }
+        if(startMonth < 0) { startMonth = 11; startYear--; }
+        if(endMonth > 11) { endMonth = 0; endYear++; }
+
+        const startDate = new Date(startYear, startMonth, 10), endDate = new Date(endYear, endMonth, 9, 23, 59, 59);
+        let cardTotal = 0;
+        entries.forEach(ent => {
+            if(ent.type === 'expense') {
+                const pay = payments.find(p => p.id === ent.paymentId);
+                if(pay && pay.type === 'card') {
+                    const eDate = new Date(ent.date);
+                    if(eDate >= startDate && eDate <= endDate) cardTotal += ent.amount;
+                }
+            }
+        });
+
+        let billingTargetMonth = curDate > 22 ? (curMonth + 2 > 12 ? 1 : curMonth + 2) : (curMonth + 1);
+        document.getElementById('billing-main-title').innerText = `💳 카드 대금 결산 (${billingTargetMonth}월 22일 결제예정)`;
+        document.getElementById('billing-amount').innerText = `${cardTotal.toLocaleString()}원`;
+        document.getElementById('billing-desc').innerText = `산정 기간: ${startMonth+1}.10 ~ ${endMonth+1}.09 사용분`;
+
+        updateCategoryChart();
+        populateCategorySelects();
+        updateWeeklyChart();
+        updateMonthlyChart();
+    }
+
+    function renderScheduleSettings() {
+        const list = document.getElementById('card-schedule-list'); list.innerHTML = '';
+        payments.filter(p => p.type === 'card').forEach(card => {
+            list.innerHTML += `<div class="schedule-item"><span style="font-weight:600; color:#34495e;">💳 ${card.name}</span><div>매월 <input type="number" min="1" max="31" value="${card.payDate}" onchange="updateSchedule('card', this.value, '${card.id}')" style="width:50px; text-align:center;"> 일</div></div>`;
+        });
+        document.getElementById('payday-input').value = userSettings.payday;
+    }
+
+    function updateSchedule(type, val, id) {
+        if(type === 'payday') userSettings.payday = parseInt(val);
+        if(type === 'card') { const card = payments.find(p => p.id === id); if(card) card.payDate = parseInt(val); }
+        saveData();
+    }
+
+    // 💡 고정 지출 리스트에 카테고리 뱃지 포함하여 표현
+    function renderFixedExpenses() {
+        const list = document.getElementById('dashboard-fixed-expense-list'); list.innerHTML = '';
+        const curMonth = today.getMonth() + 1;
+        const fixedEntries = entries.filter(e => e.type === 'expense' && e.isFixed && new Date(e.date).getMonth() + 1 === curMonth);
+        
+        if(fixedEntries.length === 0) return list.innerHTML = '<div class="empty-state" style="padding:15px 0;">이번 달 고정 지출 내역이 없습니다.</div>';
+
+        let totalFixed = 0;
+        fixedEntries.forEach(ent => {
+            totalFixed += ent.amount;
+            const cat = expCategories.find(c => c.id === ent.categoryId);
+            const catBadge = cat ? `<span class="badge" style="background-color: ${cat.color}">${cat.name}</span>` : '';
+            
+            list.innerHTML += `
+                <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid #eee; font-size:13px;">
+                    <div>
+                        <div style="margin-bottom:3px;">${catBadge}</div>
+                        <strong style="color:#333; display:block;">${ent.place}</strong>
+                        <span style="font-size:11px; color:#888;">${ent.date} · ${ent.item}</span>
+                    </div>
+                    <strong style="color:var(--expense)">-${ent.amount.toLocaleString()}원</strong>
+                </div>`;
+        });
+        list.innerHTML += `<div style="text-align:right; margin-top:12px; font-weight:700; font-size:14px;">고정비 합계: <span style="color:var(--expense)">${totalFixed.toLocaleString()}원</span></div>`;
+    }
+</script>
+
+</body>
+</html>
