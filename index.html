@@ -116,7 +116,7 @@
         .cancel-edit-btn { background-color: #95a5a6; color: white; border: none; font-weight: 600; cursor: pointer; padding: 16px; border-radius: 12px; font-size: 16px; display: none; }
 
         /* 월간 달력 스타일 */
-        .calendar-wrapper { margin-top: 32px; border: 1px solid #eee; border-radius: 16px; padding: 20px; background: #fff; touch-action: pan-y; }
+        .calendar-wrapper { margin-top: 32px; border: 1px solid #eee; border-radius: 16px; padding: 20px; background: #fff; }
         .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
         .cal-nav-btn { background: #f0f0f0; border: none; padding: 6px 12px; border-radius: 8px; cursor: pointer; font-weight: bold; }
         .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
@@ -342,7 +342,6 @@
                         <span>목표 가용예산 <span style="font-size:10px; color:#888;">(수입+월급-총목표지출)</span></span>
                         <strong id="dash-available-budget" style="color: var(--primary);">0원</strong>
                     </div>
-                    <!-- 💡 요청 반영: '실제 지출과 목표 지출의 차액'으로 명칭 명확화 -->
                     <div style="font-size: 13px; color: #555; margin-bottom: 12px; display: flex; justify-content: space-between; background: #fff; padding: 7px 10px; border-radius: 6px; border: 1px solid #eee;">
                         <span>실제 지출과 목표 지출의 차액</span>
                         <strong id="dash-budget-diff">0원</strong>
@@ -385,7 +384,16 @@
                 </div>
             </div>
 
-            <!-- 주별 카테고리별 조회 차트 (고정비 제외 산출 및 하단 명시) -->
+            <!-- 💡 요구사항 반영: 카테고리별 상세 항목 조회 기능 추가 -->
+            <div class="stats-card stats-full">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:8px;">
+                    <h3 class="stats-title" style="margin:0;">카테고리별 상세 항목 조회 (이번 달)</h3>
+                    <select id="detail-category-select" class="filter-select" onchange="renderCategoryDetailList()"></select>
+                </div>
+                <div id="category-detail-content" style="max-height: 280px; overflow-y: auto;"></div>
+            </div>
+
+            <!-- 주별 카테고리별 조회 차트 (색상 비율 표기 및 고정비 제외) -->
             <div class="stats-card">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
                     <h3 class="stats-title" style="margin:0;">이번 달 주별 지출 추이</h3>
@@ -397,7 +405,7 @@
                 <div style="font-size: 11px; color: #888; text-align: right; margin-top: 6px;">* 지출 및 예산 산출 시 고정비 항목 제외</div>
             </div>
 
-            <!-- 월별 카테고리별 조회 차트 (고정비 제외 산출 및 하단 명시) -->
+            <!-- 월별 카테고리별 조회 차트 (색상 비율 표기 및 고정비 제외) -->
             <div class="stats-card">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
                     <h3 class="stats-title" style="margin:0;">최근 4개월 지출 추이</h3>
@@ -448,7 +456,7 @@
 </div>
 
 <script>
-    const STORAGE_KEY = 'smart_account_data_v24';
+    const STORAGE_KEY = 'smart_account_data_v25';
 
     let entries = [];
     let expCategories = [
@@ -887,31 +895,13 @@
         renderCalendar(); updateDashboardStats(); updateDashboardBudgets(); renderAnalytics(); renderFixedExpenses();
     }
 
+    // 💡 1번 요구사항 반영: 스크롤/스와이프 삭제, 버튼 클릭으로만 월 변경
     function changeMonth(offset) {
         currentMonth += offset;
         if (currentMonth > 11) { currentMonth = 0; currentYear++; }
         else if (currentMonth < 0) { currentMonth = 11; currentYear--; }
         renderCalendar();
         closeDailyDetails();
-    }
-
-    let touchStartX = 0;
-    let touchEndX = 0;
-    const calendarWrapper = document.getElementById('calendar-wrapper');
-
-    calendarWrapper.addEventListener('touchstart', e => {
-        touchStartX = e.changedTouches[0].screenX;
-    }, {passive: true});
-
-    calendarWrapper.addEventListener('touchend', e => {
-        touchEndX = e.changedTouches[0].screenX;
-        handleSwipe();
-    }, {passive: true});
-
-    function handleSwipe() {
-        const threshold = 50; 
-        if (touchEndX < touchStartX - threshold) { changeMonth(1); }
-        if (touchEndX > touchStartX + threshold) { changeMonth(-1); }
     }
 
     function renderCalendar() {
@@ -1233,12 +1223,63 @@
         });
     }
 
+    // 💡 2번 요구사항 반영: 카테고리별 상세 항목 조회 렌더링
+    function renderCategoryDetailList() {
+        const select = document.getElementById('detail-category-select');
+        const container = document.getElementById('category-detail-content');
+        if (!select || !container) return;
+
+        const targetCatId = select.value;
+        const curMonth = today.getMonth() + 1;
+        const curYear = today.getFullYear();
+
+        const catEntries = entries.filter(e => {
+            if (e.type !== 'expense') return false;
+            const d = new Date(e.date);
+            return d.getFullYear() === curYear && (d.getMonth() + 1) === curMonth && (targetCatId === 'all' || e.categoryId === targetCatId);
+        });
+
+        if (catEntries.length === 0) {
+            container.innerHTML = '<div class="empty-state">해당 카테고리의 이번 달 지출 내역이 없습니다.</div>';
+            return;
+        }
+
+        let total = 0;
+        let html = '<ul class="expense-list" style="max-height:none;">';
+        catEntries.forEach(ent => {
+            total += ent.amount;
+            const cat = expCategories.find(c => c.id === ent.categoryId);
+            const pay = payments.find(p => p.id === ent.paymentId);
+            html += `
+                <li class="expense-item" style="padding:10px 12px; margin-bottom:6px;">
+                    <div style="flex:1;">
+                        <div class="item-badges">
+                            <span class="badge" style="background-color: ${cat?.color || '#888'};">${cat?.name || '기타'}</span>
+                            <span class="badge" style="background-color: #34495e;">${pay?.name || '결제수단'}</span>
+                            ${ent.isFixed ? '<span class="badge badge-fixed">고정비</span>' : ''}
+                        </div>
+                        <div class="item-main-text" style="font-size:13px;">${ent.place}</div>
+                        <div class="item-sub-text" style="font-size:11px;">${ent.date} · ${ent.item}</div>
+                    </div>
+                    <div>
+                        <span class="amount-exp" style="font-size:14px;">-${ent.amount.toLocaleString()}원</span>
+                    </div>
+                </li>
+            `;
+        });
+        html += `</ul>`;
+        html += `<div style="text-align:right; font-weight:800; font-size:14px; margin-top:10px; color:#333;">선택 항목 합계: <span style="color:var(--expense);">${total.toLocaleString()}원</span></div>`;
+        container.innerHTML = html;
+    }
+
     function populateCategorySelects() {
         const weeklySelect = document.getElementById('weekly-category-select');
         const monthlySelect = document.getElementById('monthly-category-select');
+        const detailSelect = document.getElementById('detail-category-select');
         
         const currentWeeklyVal = weeklySelect.value;
         const currentMonthlyVal = monthlySelect.value;
+        const currentDetailVal = detailSelect ? detailSelect.value : 'all';
 
         let optionsHtml = '<option value="all">전체 카테고리</option>';
         expCategories.forEach(cat => {
@@ -1247,24 +1288,29 @@
 
         weeklySelect.innerHTML = optionsHtml;
         monthlySelect.innerHTML = optionsHtml;
+        if (detailSelect) {
+            detailSelect.innerHTML = optionsHtml;
+            detailSelect.value = currentDetailVal;
+        }
 
         weeklySelect.value = currentWeeklyVal;
         monthlySelect.value = currentMonthlyVal;
     }
 
-    // 💡 지출 추이 그래프 산출 시 고정비(isFixed) 제외
+    // 💡 3번 요구사항 반영: 전체 카테고리 조회 시 카테고리별 색상 구분(Stacked Bar) 지원 + 고정비 제외
     function updateWeeklyChart() {
         const curMonth = today.getMonth(), curYear = today.getFullYear();
         const selectedCat = document.getElementById('weekly-category-select').value;
-        let weeklyTotals = [0, 0, 0, 0, 0];
+        const weekLabels = ['1주차', '2주차', '3주차', '4주차', '5주차'];
         
+        // 월별 고정비 제외 순수 변동예산 산출
+        let curMonthFixedTotal = 0;
         entries.forEach(ent => {
-            if(ent.type === 'expense' && !ent.isFixed) { // 고정비 제외
+            if (ent.type === 'expense' && ent.isFixed) {
                 const d = new Date(ent.date);
-                if(d.getFullYear() === curYear && d.getMonth() === curMonth) {
-                    if(selectedCat === 'all' || ent.categoryId === selectedCat) {
-                        const day = d.getDate();
-                        if(day <= 7) weeklyTotals[0] += ent.amount; else if(day <= 14) weeklyTotals[1] += ent.amount; else if(day <= 21) weeklyTotals[2] += ent.amount; else if(day <= 28) weeklyTotals[3] += ent.amount; else weeklyTotals[4] += ent.amount;
+                if (d.getFullYear() === curYear && d.getMonth() === curMonth) {
+                    if (selectedCat === 'all' || ent.categoryId === selectedCat) {
+                        curMonthFixedTotal += ent.amount;
                     }
                 }
             }
@@ -1277,61 +1323,199 @@
             const cat = expCategories.find(c => c.id === selectedCat);
             if(cat) totalMonthlyBudget = cat.budget || 0;
         }
-        let weeklyBudgetLine = Math.round(totalMonthlyBudget / 4.3);
+        let netMonthlyBudget = Math.max(0, totalMonthlyBudget - curMonthFixedTotal);
+        let weeklyBudgetLine = Math.round(netMonthlyBudget / 4.3);
+
+        let datasets = [];
+        if (selectedCat === 'all') {
+            // 카테고리별 누적 막대로 색상 구분
+            expCategories.forEach(cat => {
+                let catWeeklyTotals = [0, 0, 0, 0, 0];
+                entries.forEach(ent => {
+                    if (ent.type === 'expense' && !ent.isFixed && ent.categoryId === cat.id) {
+                        const d = new Date(ent.date);
+                        if (d.getFullYear() === curYear && d.getMonth() === curMonth) {
+                            const day = d.getDate();
+                            if(day <= 7) catWeeklyTotals[0] += ent.amount;
+                            else if(day <= 14) catWeeklyTotals[1] += ent.amount;
+                            else if(day <= 21) catWeeklyTotals[2] += ent.amount;
+                            else if(day <= 28) catWeeklyTotals[3] += ent.amount;
+                            else catWeeklyTotals[4] += ent.amount;
+                        }
+                    }
+                });
+                datasets.push({
+                    label: cat.name,
+                    data: catWeeklyTotals,
+                    backgroundColor: cat.color,
+                    stack: 'expenseStack',
+                    borderRadius: 4,
+                    barThickness: 32
+                });
+            });
+        } else {
+            let weeklyTotals = [0, 0, 0, 0, 0];
+            const cat = expCategories.find(c => c.id === selectedCat);
+            entries.forEach(ent => {
+                if(ent.type === 'expense' && !ent.isFixed && ent.categoryId === selectedCat) {
+                    const d = new Date(ent.date);
+                    if(d.getFullYear() === curYear && d.getMonth() === curMonth) {
+                        const day = d.getDate();
+                        if(day <= 7) weeklyTotals[0] += ent.amount;
+                        else if(day <= 14) weeklyTotals[1] += ent.amount;
+                        else if(day <= 21) weeklyTotals[2] += ent.amount;
+                        else if(day <= 28) weeklyTotals[3] += ent.amount;
+                        else weeklyTotals[4] += ent.amount;
+                    }
+                }
+            });
+            datasets.push({
+                label: (cat ? cat.name : '선택 카테고리') + ' 지출',
+                data: weeklyTotals,
+                backgroundColor: cat ? cat.color : '#7f8c8d',
+                borderRadius: 8,
+                barThickness: 32
+            });
+        }
+
+        // 예산선 데이터셋 추가
+        datasets.push({
+            label: '주간 예산선(고정비 제외)',
+            data: [weeklyBudgetLine, weeklyBudgetLine, weeklyBudgetLine, weeklyBudgetLine, weeklyBudgetLine],
+            type: 'line',
+            borderColor: '#e74c3c',
+            borderWidth: 3,
+            borderDash: [5, 5],
+            pointRadius: 0
+        });
 
         if(weeklyChartInst) weeklyChartInst.destroy();
         weeklyChartInst = new Chart(document.getElementById('weeklyChart').getContext('2d'), {
             type: 'bar', 
-            data: { 
-                labels: ['1주차', '2주차', '3주차', '4주차', '5주차'], 
-                datasets: [
-                    { label: '주별 지출(고정비 제외)', data: weeklyTotals, backgroundColor: '#7f8c8d', borderRadius: 8, barThickness: 32 },
-                    { label: '주간 예산선', data: [weeklyBudgetLine, weeklyBudgetLine, weeklyBudgetLine, weeklyBudgetLine, weeklyBudgetLine], type: 'line', borderColor: '#e74c3c', borderWidth: 3, borderDash: [5, 5], pointRadius: 0 }
-                ] 
-            },
-            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: true, position: 'bottom', labels: { font: { family: 'Pretendard', size: 11 } } } }, scales: { y: { beginAtZero: true } } }
+            data: { labels: weekLabels, datasets: datasets },
+            options: { 
+                responsive: true, 
+                maintainAspectRatio: false, 
+                plugins: { 
+                    legend: { display: true, position: 'bottom', labels: { font: { family: 'Pretendard', size: 11 }, boxWidth: 12 } } 
+                }, 
+                scales: { 
+                    x: { stacked: true },
+                    y: { stacked: true, beginAtZero: true } 
+                } 
+            }
         });
     }
 
-    // 💡 지출 추이 그래프 산출 시 고정비(isFixed) 제외
+    // 💡 3번 요구사항 반영: 최근 4개월 지출 추이 전체 조회 시 카테고리별 색상 구분(Stacked Bar) + 고정비 제외
     function updateMonthlyChart() {
         const curMonth = today.getMonth(), curYear = today.getFullYear();
         const selectedCat = document.getElementById('monthly-category-select').value;
-        let monthlyTotals = [], monthLabels = [];
+        let monthLabels = [];
+        let monthDates = [];
+
+        for(let i=3; i>=0; i--) {
+            let targetDate = new Date(curYear, curMonth - i, 1);
+            monthDates.push({ year: targetDate.getFullYear(), month: targetDate.getMonth() });
+            monthLabels.push(`${targetDate.getMonth()+1}월`);
+        }
         
-        let targetMonthlyBudget = 0;
+        let totalMonthlyBudget = 0;
         if(selectedCat === 'all') {
-            expCategories.forEach(c => targetMonthlyBudget += (c.budget || 0));
+            expCategories.forEach(c => totalMonthlyBudget += (c.budget || 0));
         } else {
             const cat = expCategories.find(c => c.id === selectedCat);
             if(cat) targetMonthlyBudget = cat.budget || 0;
         }
 
-        for(let i=3; i>=0; i--) {
-            let targetDate = new Date(curYear, curMonth - i, 1);
-            let mY = targetDate.getFullYear(), mM = targetDate.getMonth(), mTotal = 0;
+        // 각 월별 고정비 합산 후 월별 순수 변동예산선 배열 산출
+        let monthlyBudgetLines = monthDates.map(m => {
+            let mFixed = 0;
             entries.forEach(ent => {
-                if(ent.type === 'expense' && !ent.isFixed) { // 고정비 제외
+                if (ent.type === 'expense' && ent.isFixed) {
                     const d = new Date(ent.date);
-                    if(d.getFullYear() === mY && d.getMonth() === mM) {
-                        if(selectedCat === 'all' || ent.categoryId === selectedCat) mTotal += ent.amount;
+                    if (d.getFullYear() === m.year && d.getMonth() === m.month) {
+                        if (selectedCat === 'all' || ent.categoryId === selectedCat) {
+                            mFixed += ent.amount;
+                        }
                     }
                 }
             });
-            monthLabels.push(`${mM+1}월`); monthlyTotals.push(mTotal);
+            return Math.max(0, totalMonthlyBudget - mFixed);
+        });
+
+        let datasets = [];
+        if (selectedCat === 'all') {
+            expCategories.forEach(cat => {
+                let catMonthlyTotals = monthDates.map(m => {
+                    let total = 0;
+                    entries.forEach(ent => {
+                        if (ent.type === 'expense' && !ent.isFixed && ent.categoryId === cat.id) {
+                            const d = new Date(ent.date);
+                            if (d.getFullYear() === m.year && d.getMonth() === m.month) {
+                                total += ent.amount;
+                            }
+                        }
+                    });
+                    return total;
+                });
+                datasets.push({
+                    label: cat.name,
+                    data: catMonthlyTotals,
+                    backgroundColor: cat.color,
+                    stack: 'expenseMonthlyStack',
+                    borderRadius: 4,
+                    barThickness: 36
+                });
+            });
+        } else {
+            const cat = expCategories.find(c => c.id === selectedCat);
+            let monthlyTotals = monthDates.map(m => {
+                let total = 0;
+                entries.forEach(ent => {
+                    if (ent.type === 'expense' && !ent.isFixed && ent.categoryId === selectedCat) {
+                        const d = new Date(ent.date);
+                        if (d.getFullYear() === m.year && d.getMonth() === m.month) {
+                            total += ent.amount;
+                        }
+                    }
+                });
+                return total;
+            });
+            datasets.push({
+                label: (cat ? cat.name : '선택 카테고리') + ' 지출',
+                data: monthlyTotals,
+                backgroundColor: cat ? cat.color : '#7f8c8d',
+                borderRadius: 8,
+                barThickness: 36
+            });
         }
+
+        datasets.push({
+            label: '월 목표 예산선(고정비 제외)',
+            data: monthlyBudgetLines,
+            type: 'line',
+            borderColor: '#e74c3c',
+            borderWidth: 3,
+            borderDash: [5, 5],
+            pointRadius: 0
+        });
 
         if(monthlyChartInst) monthlyChartInst.destroy();
         monthlyChartInst = new Chart(document.getElementById('monthlyChart').getContext('2d'), {
             type: 'bar', 
-            data: { 
-                labels: monthLabels, 
-                datasets: [
-                    { label: '월별 지출(고정비 제외)', data: monthlyTotals, backgroundColor: '#7f8c8d', borderRadius: 8, barThickness: 36 },
-                    { label: '월 목표 예산선', data: [targetMonthlyBudget, targetMonthlyBudget, targetMonthlyBudget, targetMonthlyBudget], type: 'line', borderColor: '#e74c3c', borderWidth: 3, borderDash: [5, 5], pointRadius: 0 }
-                ] 
-            },
-            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: true, position: 'bottom', labels: { font: { family: 'Pretendard', size: 11 } } } }, scales: { y: { beginAtZero: true } } }
+            data: { labels: monthLabels, datasets: datasets },
+            options: { 
+                responsive: true, 
+                maintainAspectRatio: false, 
+                plugins: { 
+                    legend: { display: true, position: 'bottom', labels: { font: { family: 'Pretendard', size: 11 }, boxWidth: 12 } } 
+                }, 
+                scales: { 
+                    x: { stacked: true },
+                    y: { stacked: true, beginAtZero: true } 
+                } 
+            }
         });
     }
 
@@ -1362,6 +1546,7 @@
 
         updateCategoryChart();
         populateCategorySelects();
+        renderCategoryDetailList();
         updateWeeklyChart();
         updateMonthlyChart();
     }
@@ -1380,7 +1565,6 @@
         saveData();
     }
 
-    // 💡 고정 지출 리스트에 카테고리 뱃지 포함하여 표현
     function renderFixedExpenses() {
         const list = document.getElementById('dashboard-fixed-expense-list'); list.innerHTML = '';
         const curMonth = today.getMonth() + 1;
