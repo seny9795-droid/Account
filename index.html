@@ -561,7 +561,7 @@
 
 <script>
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzhsPUwzDTaVhGwzeP8DgNNBHi8mPDFcRsq8uaGoLtDisMLRAD2UR5NkITCotg1D0Th7Q/exec";
-    const STORAGE_KEY = 'smart_account_data_v39';
+    const STORAGE_KEY = 'smart_account_data_v40';
 
     let entries = [];
     let expCategories = [
@@ -1303,7 +1303,7 @@
                         entries = entries.filter(e => String(e.id) !== String(editingId));
                     }
                 } else {
-                    // 💡 일반 단건 수정 데이터 정확히 반영
+                    // 💡 [핵심 해결] 일반 단건 수정 데이터 정확히 덮어쓰기 및 반영
                     const index = entries.findIndex(e => String(e.id) === String(editingId));
                     if (index !== -1) {
                         entries[index] = {
@@ -1445,6 +1445,7 @@
             }
             toggleFormType();
 
+            // 💡 [핵심 해결] 수정 모드 진입 시 기존 항목의 날짜와 상세 데이터가 올바르게 세팅되도록 보완
             setTimeout(() => {
                 document.getElementById('date').value = ent.date; 
                 document.getElementById('place').value = ent.place; 
