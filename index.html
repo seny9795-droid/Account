@@ -996,7 +996,7 @@ document.getElementById('entry-form').addEventListener('submit', function(e) {
         const isRepeating = isFixed && document.getElementById('is-repeating').checked;
 
         if (editingId) {
-            const originalEntry = entries.find(e => e.id === editingId);
+            const originalEntry = entries.find(e => String(e.id) === String(editingId));
             let updateAllFuture = false;
 
             if (originalEntry && ((originalEntry.isFixed && originalEntry.isRepeating) || originalEntry.groupId)) {
@@ -1004,7 +1004,6 @@ document.getElementById('entry-form').addEventListener('submit', function(e) {
             }
 
             if (updateAllFuture && originalEntry.isFixed && originalEntry.isRepeating) {
-                // 고정비 반복 일괄 수정
                 entries.forEach(e => {
                     if (e.isFixed && e.isRepeating && e.categoryId === originalEntry.categoryId && e.place === originalEntry.place && new Date(e.date) >= new Date(originalEntry.date)) {
                         e.place = place;
@@ -1015,14 +1014,12 @@ document.getElementById('entry-form').addEventListener('submit', function(e) {
                     }
                 });
             } else if (updateAllFuture && originalEntry.groupId) {
-                // 💡 할부 그룹 전체 수정 (원금 기준 총액으로 재분할 및 개월 수 변경 반영)
                 entries = entries.filter(e => e.groupId !== originalEntry.groupId);
                 
                 const splitAmount = Math.floor(totalAmount / months);
                 const remainder = totalAmount % months; 
                 const newGroupId = 'group_' + Date.now();
 
-                // 기존 첫 회차의 날짜를 기준으로 연속된 월 계산
                 for (let i = 0; i < months; i++) {
                     let targetYear = baseDate.getFullYear();
                     let targetMonth = baseDate.getMonth() + i;
@@ -1036,7 +1033,7 @@ document.getElementById('entry-form').addEventListener('submit', function(e) {
                     let itemLabel = months > 1 ? `${item} (${i+1}/${months}회차)` : item;
 
                     const entryData = {
-                        id: Date.now() + i + Math.random(), 
+                        id: 'id_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5), 
                         type: type,
                         date: getLocalDateString(targetDate),
                         categoryId: categoryId,
@@ -1051,11 +1048,10 @@ document.getElementById('entry-form').addEventListener('submit', function(e) {
                     entries.unshift(entryData);
                 }
             } else {
-                // 단건 수정인 경우
                 if (originalEntry && originalEntry.groupId) {
-                    entries = entries.filter(e => e.id !== editingId);
+                    entries = entries.filter(e => String(e.id) !== String(editingId));
                 } else {
-                    const index = entries.findIndex(e => e.id === editingId);
+                    const index = entries.findIndex(e => String(e.id) === String(editingId));
                     if (index !== -1) {
                         entries[index] = {
                             ...entries[index],
@@ -1065,7 +1061,6 @@ document.getElementById('entry-form').addEventListener('submit', function(e) {
                 }
             }
         } else {
-            // 신규 등록인 경우
             const splitAmount = Math.floor(totalAmount / months);
             const remainder = totalAmount % months; 
             const newGroupId = isInstallment ? 'group_' + Date.now() : null;
@@ -1083,7 +1078,7 @@ document.getElementById('entry-form').addEventListener('submit', function(e) {
                 let itemLabel = months > 1 ? `${item} (${i+1}/${months}회차)` : item;
 
                 const entryData = {
-                    id: Date.now() + i + Math.random(), 
+                    id: 'id_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5), 
                     type: type,
                     date: getLocalDateString(targetDate),
                     categoryId: categoryId,
@@ -1121,9 +1116,8 @@ document.getElementById('entry-form').addEventListener('submit', function(e) {
         updateUI();
     });
 
-    // 💡 할부 삭제 연동 기능이 포함된 삭제 함수
-    function deleteEntry(id) {
-        const targetEntry = entries.find(e => e.id === id);
+function deleteEntry(id) {
+        const targetEntry = entries.find(e => String(e.id) === String(id));
         if (!targetEntry) return;
 
         let deleteGroup = false;
@@ -1136,16 +1130,20 @@ document.getElementById('entry-form').addEventListener('submit', function(e) {
         if (deleteGroup && targetEntry.groupId) {
             entries = entries.filter(e => e.groupId !== targetEntry.groupId);
         } else {
-            entries = entries.filter(e => e.id !== id);
+            entries = entries.filter(e => String(e.id) !== String(id));
         }
 
-        if (editingId === id) cancelEdit();
+        if (String(editingId) === String(id)) cancelEdit();
         saveData();
         updateUI();
         if(selectedDateStr) selectDate(selectedDateStr);
     }
- function editEntry(id) {
-        const ent = entries.find(e => e.id === id); editingId = id;
+    
+function editEntry(id) {
+        const ent = entries.find(e => String(e.id) === String(id)); 
+        if (!ent) return;
+        editingId = id;
+        
         document.getElementById(`type-${ent.type}`).click(); 
         document.getElementById('date').value = ent.date; 
         document.getElementById('place').value = ent.place; 
@@ -1166,9 +1164,11 @@ document.getElementById('entry-form').addEventListener('submit', function(e) {
             }
             updateStyles();
         }, 50);
-        document.getElementById('submit-btn').innerText = '수정 내용 저장'; document.getElementById('cancel-edit-btn').style.display = 'block'; window.scrollTo({ top: 0, behavior: 'smooth' });
+        document.getElementById('submit-btn').innerText = '수정 내용 저장'; 
+        document.getElementById('cancel-edit-btn').style.display = 'block'; 
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     }
-
+    
     function cancelEdit() {
         editingId = null; document.getElementById('place').value = ''; document.getElementById('item').value = ''; document.getElementById('amount').value = ''; document.getElementById('is-fixed').checked = false;
         document.getElementById('is-installment').checked = false;
@@ -1290,10 +1290,8 @@ document.getElementById('entry-form').addEventListener('submit', function(e) {
         }
     }
 
-    function selectDate(dateStr) {
+function selectDate(dateStr) {
         selectedDateStr = dateStr; 
-        
-        // 💡 1번 반영: 달력 날짜 클릭 시 입력 폼의 날짜를 해당 일자로 자동 연동
         document.getElementById('date').value = dateStr;
         
         renderCalendar(); 
@@ -1313,7 +1311,8 @@ document.getElementById('entry-form').addEventListener('submit', function(e) {
                     if (ent.isFixed) badges += `<span class="badge badge-fixed">고정비</span>`;
                     if (ent.groupId) badges += `<span class="badge badge-installment">할부</span>`;
                 }
-                listEl.innerHTML += `<li class="expense-item"><div style="flex: 1;"><div class="item-badges">${badges}</div><div class="item-main-text">${ent.place}</div><div class="item-sub-text">${ent.item}</div></div><div><span class="${ent.type==='expense'?'amount-exp':'amount-inc'}">${ent.type==='expense'?'-':'+'}${ent.amount.toLocaleString()}원</span><div class="item-actions"><button type="button" class="action-btn edit-btn" onclick="editEntry(${ent.id})">수정</button><button type="button" class="action-btn delete-btn" onclick="deleteEntry(${ent.id})">삭제</button></div></div></li>`;
+                // 💡 ID를 문자열 따옴표로 감싸서 전달하도록 수정
+                listEl.innerHTML += `<li class="expense-item"><div style="flex: 1;"><div class="item-badges">${badges}</div><div class="item-main-text">${ent.place}</div><div class="item-sub-text">${ent.item}</div></div><div><span class="${ent.type==='expense'?'amount-exp':'amount-inc'}">${ent.type==='expense'?'-':'+'}${ent.amount.toLocaleString()}원</span><div class="item-actions"><button type="button" class="action-btn edit-btn" onclick="editEntry('${ent.id}')">수정</button><button type="button" class="action-btn delete-btn" onclick="deleteEntry('${ent.id}')">삭제</button></div></div></li>`;
             });
         }
         document.getElementById('daily-detail-section').style.display = 'block';
