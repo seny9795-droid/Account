@@ -1256,7 +1256,72 @@ function editEntry(id) {
         document.getElementById('fixed-options-container').style.display = 'none';
         document.getElementById('submit-btn').innerText = '내역 추가하기'; document.getElementById('cancel-edit-btn').style.display = 'none';
     }
+    
+// 카테고리 목록 렌더링 함수
+    function renderCategories() {
+        const catListEl = document.getElementById('category-list');
+        if (!catListEl) return;
+        const type = document.getElementById('type-expense').checked ? 'expense' : 'income';
+        const categories = type === 'expense' ? expCategories : incCategories;
+        
+        catListEl.innerHTML = '';
+        categories.forEach((cat, idx) => {
+            catListEl.innerHTML += `
+                <label class="selection-item" style="border-color: ${cat.color};">
+                    <input type="radio" name="category" value="${cat.id}" id="${cat.id}" ${idx === 0 ? 'checked' : ''}>
+                    <span class="selection-tag" style="background-color: ${cat.color}; color: #fff;">${cat.name}</span>
+                </label>
+            `;
+        });
+    }
 
+    // 결제수단 목록 렌더링 함수
+    function renderPayments() {
+        const payListEl = document.getElementById('payment-list');
+        if (!payListEl) return;
+        
+        payListEl.innerHTML = '';
+        payments.forEach((pay, idx) => {
+            payListEl.innerHTML += `
+                <label class="selection-item">
+                    <input type="radio" name="payment" value="${pay.id}" id="${pay.id}" ${idx === 0 ? 'checked' : ''}>
+                    <span>${pay.name}</span>
+                </label>
+            `;
+        });
+    }
+
+    // 수입/지출 전환 시 카테고리 갱신 및 UI 제어
+    function toggleFormType() {
+        const isExpense = document.getElementById('type-expense').checked;
+        const installmentWrapper = document.getElementById('installment-toggle-wrapper');
+        const installmentMonthsContainer = document.getElementById('installment-months-container');
+        const fixedContainer = document.getElementById('fixed-expense-container');
+        const fixedOptionsContainer = document.getElementById('fixed-options-container');
+
+        if (installmentWrapper) installmentWrapper.style.display = isExpense ? 'block' : 'none';
+        if (!isExpense) {
+            if (document.getElementById('is-installment')) document.getElementById('is-installment').checked = false;
+            if (installmentMonthsContainer) installmentMonthsContainer.style.display = 'none';
+        }
+        if (fixedContainer) fixedContainer.style.display = isExpense ? 'block' : 'none';
+        if (!isExpense) {
+            if (document.getElementById('is-fixed')) document.getElementById('is-fixed').checked = false;
+            if (fixedOptionsContainer) fixedOptionsContainer.style.display = 'none';
+        }
+        renderCategories();
+    }
+
+    // 수정 취소 함수
+    function cancelEdit() {
+        editingId = null;
+        document.getElementById('entry-form').reset();
+        document.getElementById('submit-btn').innerText = '내역 추가하기';
+        document.getElementById('cancel-edit-btn').style.display = 'none';
+        if(document.getElementById('installment-months-container')) document.getElementById('installment-months-container').style.display = 'none';
+        if(document.getElementById('fixed-options-container')) document.getElementById('fixed-options-container').style.display = 'none';
+        toggleFormType();
+    }
     function updateUI() {
         processRepeatingFixedExpensesForMonth(currentYear, currentMonth);
         renderCalendar(); 
