@@ -212,26 +212,24 @@
         .modal-btn-confirm { background: var(--primary); color: white; }
         .modal-btn-cancel { background: #ccc; color: #333; }
 
-        /* 💡 2번 반영: 달력과 상세 내역을 좌우로 나란히 배치하는 스타일 */
-    .calendar-and-detail-container {
+/* 💡 입력폼 왼쪽 / 달력 오른쪽 레이아웃 스타일 */
+    .calendar-wrapper { margin-top: 0 !important; }
+    
+    /* 달력과 상세내역을 세로로 묶어주는 우측 패널 블록 */
+    .right-calendar-pane {
         display: flex;
-        gap: 20px;
-        align-items: flex-start;
+        flex-direction: column;
+        gap: 16px;
     }
-    .calendar-main-pane { flex: 1; }
-    .daily-detail-side-pane { 
-        width: 320px; 
-        margin-top: 32px; 
-        border: 1px solid #eee; 
+
+    /* 달력 바로 아래에 뜨는 일별 상세 내역 스타일 */
+    .daily-detail-section { 
+        margin-top: 0; 
+        padding: 16px; 
+        background: #f8f9fa; 
         border-radius: 16px; 
-        padding: 20px; 
-        background: #fff; 
-        box-sizing: border-box;
+        border: 1px solid #eee; 
         display: none; 
-    }
-    @media (max-width: 900px) {
-        .calendar-and-detail-container { flex-direction: column; }
-        .daily-detail-side-pane { width: 100%; margin-top: 16px; }
     }
     </style>
 </head>
@@ -246,9 +244,10 @@
         <button class="tab-btn" onclick="switchTab('schedule')">일정 및 설정</button>
     </div>
 
-    <!-- 1. 대시보드 탭 -->
+<!-- 1. 대시보드 탭 -->
     <div id="dashboard-section" class="section-content active-section">
         <div class="dashboard-grid">
+            <!-- 왼쪽: 입력 폼 영역 -->
             <div class="left-panel">
                 <div class="type-toggle">
                     <input type="radio" id="type-expense" name="entry-type" value="expense" checked onchange="toggleFormType()">
@@ -313,39 +312,37 @@
                         <button type="button" class="cancel-edit-btn" id="cancel-edit-btn" onclick="cancelEdit()">수정 취소</button>
                     </div>
                 </form>
-
-<!-- 월간 달력 및 상세 내역 가로 배치 영역 -->
-                <div class="calendar-and-detail-container">
-                    <!-- 왼쪽: 달력 영역 -->
-                    <div class="calendar-main-pane calendar-wrapper" id="calendar-wrapper" style="margin-top: 32px; border: 1px solid #eee; border-radius: 16px; padding: 20px; background: #fff;">
-                        <div class="calendar-header">
-                            <button class="cal-nav-btn" onclick="changeMonth(-1)">◀ 이전달</button>
-                            <span id="calendar-month-label" style="font-weight:800; font-size:16px;"></span>
-                            <button class="cal-nav-btn" onclick="changeMonth(1)">다음달 ▶</button>
-                        </div>
-                        <div class="calendar-grid" id="calendar-grid">
-                            <div class="cal-day-header" style="color:#e74c3c;">일</div>
-                            <div class="cal-day-header">월</div>
-                            <div class="cal-day-header">화</div>
-                            <div class="cal-day-header">수</div>
-                            <div class="cal-day-header">목</div>
-                            <div class="cal-day-header">금</div>
-                            <div class="cal-day-header" style="color:#3498db;">토</div>
-                        </div>
-                    </div>
-
-                    <!-- 오른쪽: 상세 내역 사이드 패널 (달력 옆에 나란히 위치) -->
-                    <div id="daily-detail-section" class="daily-detail-side-pane">
-                        <div class="daily-detail-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                            <strong id="daily-detail-title" style="color:#333; font-size:15px;">상세 내역</strong>
-                            <button class="close-btn" onclick="closeDailyDetails()">닫기</button>
-                        </div>
-                        <ul class="expense-list" id="daily-entry-list"></ul>
-                    </div>
-                </div>
             </div>
 
-            <div class="right-panel">
+            <!-- 오른쪽: 월간 달력 및 아래에 뜨는 상세 내역 영역 -->
+            <div class="right-panel right-calendar-pane">
+                <div class="calendar-wrapper" id="calendar-wrapper" style="border: 1px solid #eee; border-radius: 16px; padding: 20px; background: #fff;">
+                    <div class="calendar-header">
+                        <button class="cal-nav-btn" onclick="changeMonth(-1)">◀ 이전달</button>
+                        <span id="calendar-month-label" style="font-weight:800; font-size:16px;"></span>
+                        <button class="cal-nav-btn" onclick="changeMonth(1)">다음달 ▶</button>
+                    </div>
+                    <div class="calendar-grid" id="calendar-grid">
+                        <div class="cal-day-header" style="color:#e74c3c;">일</div>
+                        <div class="cal-day-header">월</div>
+                        <div class="cal-day-header">화</div>
+                        <div class="cal-day-header">수</div>
+                        <div class="cal-day-header">목</div>
+                        <div class="cal-day-header">금</div>
+                        <div class="cal-day-header" style="color:#3498db;">토</div>
+                    </div>
+                </div>
+
+                <!-- 달력 바로 아래에 위치하는 일별 상세 내역 -->
+                <div id="daily-detail-section" class="daily-detail-section">
+                    <div class="daily-detail-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                        <strong id="daily-detail-title" style="color:#333;">상세 내역</strong>
+                        <button class="close-btn" onclick="closeDailyDetails()">닫기</button>
+                    </div>
+                    <ul class="expense-list" id="daily-entry-list"></ul>
+                </div>
+
+                <!-- 요약 및 예산 카드들 -->
                 <div class="stats-card">
                     <h3 class="stats-title" id="current-month-title">이번 달 요약</h3>
                     <div class="summary-grid-3">
