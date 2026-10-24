@@ -276,7 +276,7 @@
 <!-- 1. 대시보드 탭 -->
     <div id="dashboard-section" class="section-content active-section">
         <div class="dashboard-grid">
-            <!-- 왼쪽: 입력 폼 영역 -->
+            <!-- 왼쪽: 입력 폼 영역 + 이번 달 요약 카드 + 고정 지출 리스트 -->
             <div class="left-panel">
                 <div class="type-toggle">
                     <input type="radio" id="type-expense" name="entry-type" value="expense" checked onchange="toggleFormType()">
@@ -285,69 +285,112 @@
                     <label for="type-income">수입</label>
                 </div>
 
-                <form id="entry-form">
-                    <div class="input-grid">
-                        <input type="date" id="date" class="full-width" required>
-                        <input type="text" id="place" placeholder="사용 장소 / 수입처" required>
-                        <input type="number" id="amount" placeholder="금액 (원)" required>
-                        <input type="text" id="item" placeholder="품목 / 내역 상세" class="full-width" required>
-                        
-                        <!-- 할부 여부 체크박스 및 할부 개월 수 설정 -->
-                        <div class="fixed-expense-wrapper full-width" id="installment-toggle-wrapper" style="background:#f8f9fa;">
-                            <input type="checkbox" id="is-installment" onchange="toggleInstallment()">
-                            <label for="is-installment">할부 거래입니까?</label>
-                        </div>
+                <div class="form-card">
+                    <form id="entry-form">
+                        <div class="input-grid">
+                            <input type="date" id="date" class="full-width" required>
+                            <input type="text" id="place" placeholder="사용 장소 / 수입처" required>
+                            <input type="number" id="amount" placeholder="금액 (원)" required>
+                            <input type="text" id="item" placeholder="품목 / 내역 상세" class="full-width" required>
+                            
+                            <!-- 할부 여부 체크박스 및 할부 개월 수 설정 -->
+                            <div class="fixed-expense-wrapper full-width" id="installment-toggle-wrapper" style="background:#f8f9fa;">
+                                <input type="checkbox" id="is-installment" onchange="toggleInstallment()">
+                                <label for="is-installment">할부 거래입니까?</label>
+                            </div>
 
-                        <div class="selection-container full-width" id="installment-months-container" style="display:none; margin-bottom:12px;">
-                            <span class="selection-label">할부 개월 수 선택</span>
-                            <select id="installment-months" class="filter-select" style="width:100%;">
-                                <option value="2">2개월 할부</option>
-                                <option value="3">3개월 할부</option>
-                                <option value="4">4개월 할부</option>
-                                <option value="5">5개월 할부</option>
-                                <option value="6">6개월 할부</option>
-                                <option value="12">12개월 할부</option>
-                            </select>
-                        </div>
+                            <div class="selection-container full-width" id="installment-months-container" style="display:none; margin-bottom:12px;">
+                                <span class="selection-label">할부 개월 수 선택</span>
+                                <select id="installment-months" class="filter-select" style="width:100%;">
+                                    <option value="2">2개월 할부</option>
+                                    <option value="3">3개월 할부</option>
+                                    <option value="4">4개월 할부</option>
+                                    <option value="5">5개월 할부</option>
+                                    <option value="6">6개월 할부</option>
+                                    <option value="12">12개월 할부</option>
+                                </select>
+                            </div>
 
-                        <!-- 카테고리 -->
-                        <div class="selection-container full-width" id="category-container" style="margin-bottom:12px;">
-                            <span class="selection-label">카테고리</span>
-                            <div class="selection-list" id="category-list"></div>
-                        </div>
+                            <!-- 카테고리 -->
+                            <div class="selection-container full-width" id="category-container" style="margin-bottom:12px;">
+                                <span class="selection-label">카테고리</span>
+                                <div class="selection-list" id="category-list"></div>
+                            </div>
 
-                        <!-- 결제 수단 -->
-                        <div class="selection-container full-width" id="payment-container" style="margin-bottom:12px;">
-                            <span class="selection-label">결제 수단</span>
-                            <div class="selection-list" id="payment-list"></div>
-                        </div>
+                            <!-- 결제 수단 -->
+                            <div class="selection-container full-width" id="payment-container" style="margin-bottom:12px;">
+                                <span class="selection-label">결제 수단</span>
+                                <div class="selection-list" id="payment-list"></div>
+                            </div>
 
-                        <!-- 고정비 및 반복 설정 -->
-                        <div class="fixed-expense-wrapper" id="fixed-expense-container">
-                            <input type="checkbox" id="is-fixed" onchange="toggleFixedOptions()">
-                            <label for="is-fixed">고정비로 설정</label>
-                        </div>
+                            <!-- 고정비 및 반복 설정 -->
+                            <div class="fixed-expense-wrapper" id="fixed-expense-container">
+                                <input type="checkbox" id="is-fixed" onchange="toggleFixedOptions()">
+                                <label for="is-fixed">고정비로 설정</label>
+                            </div>
 
-                        <div class="selection-container full-width" id="fixed-options-container" style="display:none; margin-bottom:12px; background:#f8f9fa; padding:12px; border-radius:12px; border:1px solid #eee;">
-                            <div style="display:flex; align-items:center; gap:8px;">
-                                <input type="checkbox" id="is-repeating" style="width:18px; height:18px; cursor:pointer;">
-                                <label for="is-repeating" style="font-size:13px; font-weight:600; color:#555; cursor:pointer;">매월 자동으로 반복 생성하기 (고정비)</label>
+                            <div class="selection-container full-width" id="fixed-options-container" style="display:none; margin-bottom:12px; background:#f8f9fa; padding:12px; border-radius:12px; border:1px solid #eee;">
+                                <div style="display:flex; align-items:center; gap:8px;">
+                                    <input type="checkbox" id="is-repeating" style="width:18px; height:18px; cursor:pointer;">
+                                    <label for="is-repeating" style="font-size:13px; font-weight:600; color:#555; cursor:pointer;">매월 자동으로 반복 생성하기 (고정비)</label>
+                                </div>
                             </div>
                         </div>
+                        
+                        <div class="btn-group">
+                            <button type="submit" class="submit-btn" id="submit-btn">내역 추가하기</button>
+                            <button type="button" class="cancel-edit-btn" id="cancel-edit-btn" onclick="cancelEdit()">수정 시 취소</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- 이번 달 요약 카드 (좌측으로 이동) -->
+                <div class="stats-card">
+                    <h3 class="stats-title" id="current-month-title">이번 달 요약</h3>
+                    <div class="summary-grid-3">
+                        <div class="summary-box">
+                            <div class="summary-label">총 수입</div>
+                            <div class="summary-val val-inc" id="dash-income">0</div>
+                        </div>
+                        <div class="summary-box">
+                            <div class="summary-label" id="salary-label-text">지난달 월급</div>
+                            <div class="summary-val val-inc" id="dash-salary">0</div>
+                        </div>
+                        <div class="summary-box">
+                            <div class="summary-label">총 지출</div>
+                            <div class="summary-val val-exp" id="dash-expense">0</div>
+                        </div>
                     </div>
-                    
-                    <div class="btn-group">
-                        <button type="submit" class="submit-btn" id="submit-btn">내역 추가하기</button>
-                        <button type="button" class="cancel-edit-btn" id="cancel-edit-btn" onclick="cancelEdit()">수정 취소</button>
+                    <div style="font-size: 13px; color: #555; margin-bottom: 6px; display: flex; justify-content: space-between; background: #fff; padding: 7px 10px; border-radius: 6px; border: 1px solid #eee;">
+                        <span>총 목표 지출</span>
+                        <strong id="dash-total-budget" style="color: var(--expense);">0원</strong>
                     </div>
-                </form>
+                    <div style="font-size: 13px; color: #555; margin-bottom: 6px; display: flex; justify-content: space-between; background: #fff; padding: 7px 10px; border-radius: 6px; border: 1px solid #eee;">
+                        <span>목표 가용예산 <span style="font-size:10px; color:#888;">(수입+월급-총목표지출)</span></span>
+                        <strong id="dash-available-budget" style="color: var(--primary);">0원</strong>
+                    </div>
+                    <div style="font-size: 13px; color: #555; margin-bottom: 12px; display: flex; justify-content: space-between; background: #fff; padding: 7px 10px; border-radius: 6px; border: 1px solid #eee;">
+                        <span>실제 지출과 목표 지출의 차액</span>
+                        <strong id="dash-budget-diff">0원</strong>
+                    </div>
+                    <div class="total-balance">
+                        <div class="balance-label">현재 예산 <button class="edit-budget-btn" onclick="editCurrentBudget()" style="background:none; border:1px solid #ccc; border-radius:4px; padding:2px 6px; cursor:pointer; font-size:11px;">수정</button></div>
+                        <div class="balance-val"><span id="dash-balance">0</span>원</div>
+                    </div>
+                </div>
+
+                <!-- 이번 달 고정 지출 리스트 (좌측으로 이동) -->
+                <div class="stats-card">
+                    <h3 class="stats-title">고정 지출 리스트</h3>
+                    <div id="dashboard-fixed-expense-list"></div>
+                </div>
             </div>
 
-            <!-- 오른쪽: 최적화된 패널 (달력 + 2단 그리드 카드들) -->
+            <!-- 오른쪽: 최적화된 패널 (달력 + 카테고리별 예산 카드) -->
             <div class="right-panel right-calendar-pane">
                 <!-- 상단: 달력 및 상세 내역 블록 -->
                 <div class="calendar-and-details-block">
-                    <div class="calendar-wrapper" id="calendar-wrapper" style="margin: 0; padding: 0; border: none;">
+                    <div class="calendar-wrapper" id="calendar-wrapper">
                         <div class="calendar-header">
                             <button class="cal-nav-btn" onclick="changeMonth(-1)">◀ 이전달</button>
                             <span id="calendar-month-label" style="font-weight:800; font-size:16px;"></span>
@@ -374,56 +417,14 @@
                     </div>
                 </div>
 
-                <!-- 하단: 2단 그리드로 예쁘게 분산 배치된 통계/예산 카드들 -->
+                <!-- 하단: 카테고리별 예산 카드 -->
                 <div class="stats-cards-grid">
-                    <!-- 이번 달 요약 (너비 전체 차지) -->
-                    <div class="stats-card stats-card-full">
-                        <h3 class="stats-title" id="current-month-title">이번 달 요약</h3>
-                        <div class="summary-grid-3">
-                            <div class="summary-box">
-                                <div class="summary-label">총 수입</div>
-                                <div class="summary-val val-inc" id="dash-income">0</div>
-                            </div>
-                            <div class="summary-box">
-                                <div class="summary-label" id="salary-label-text">지난달 월급</div>
-                                <div class="summary-val val-inc" id="dash-salary">0</div>
-                            </div>
-                            <div class="summary-box">
-                                <div class="summary-label">총 지출</div>
-                                <div class="summary-val val-exp" id="dash-expense">0</div>
-                            </div>
-                        </div>
-                        <div style="font-size: 13px; color: #555; margin-bottom: 6px; display: flex; justify-content: space-between; background: #fff; padding: 7px 10px; border-radius: 6px; border: 1px solid #eee;">
-                            <span>총 목표 지출</span>
-                            <strong id="dash-total-budget" style="color: var(--expense);">0원</strong>
-                        </div>
-                        <div style="font-size: 13px; color: #555; margin-bottom: 6px; display: flex; justify-content: space-between; background: #fff; padding: 7px 10px; border-radius: 6px; border: 1px solid #eee;">
-                            <span>목표 가용예산 <span style="font-size:10px; color:#888;">(수입+월급-총목표지출)</span></span>
-                            <strong id="dash-available-budget" style="color: var(--primary);">0원</strong>
-                        </div>
-                        <div style="font-size: 13px; color: #555; margin-bottom: 12px; display: flex; justify-content: space-between; background: #fff; padding: 7px 10px; border-radius: 6px; border: 1px solid #eee;">
-                            <span>실제 지출과 목표 지출의 차액</span>
-                            <strong id="dash-budget-diff">0원</strong>
-                        </div>
-                        <div class="total-balance">
-                            <div class="balance-label">현재 예산 <button class="edit-budget-btn" onclick="editCurrentBudget()">수정</button></div>
-                            <div class="balance-val"><span id="dash-balance">0</span>원</div>
-                        </div>
-                    </div>
-                    
-                    <!-- 카테고리별 예산 현황 -->
                     <div class="stats-card">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
                             <h3 class="stats-title" style="margin:0;">카테고리별 예산</h3>
                             <span id="date-dday-info" style="font-size: 11px; font-weight: 700; background: #e6f0fa; color: var(--primary); padding: 4px 8px; border-radius: 6px;"></span>
                         </div>
                         <div id="dashboard-budget-container"></div>
-                    </div>
-
-                    <!-- 고정 지출 리스트 -->
-                    <div class="stats-card">
-                        <h3 class="stats-title">고정 지출 리스트</h3>
-                        <div id="dashboard-fixed-expense-list"></div>
                     </div>
                 </div>
             </div>
@@ -1026,14 +1027,14 @@ async function initApp() {
         updateDashboardStats();
     }
 
-document.getElementById('entry-form').addEventListener('submit', function(e) {
+// 💡 [수정] 모든 수정 시 중복 생성 없이 기존 데이터를 정확히 업데이트하는 폼 제출 핸들러
+    document.getElementById('entry-form').addEventListener('submit', function(e) {
         e.preventDefault();
         const type = document.getElementById('type-expense').checked ? 'expense' : 'income';
         const totalAmount = parseInt(document.getElementById('amount').value);
         if (isNaN(totalAmount) || totalAmount <= 0) return alert("올바른 금액을 입력하세요.");
         
         const startDateVal = document.getElementById('date').value;
-        
         const isInstallmentCheckbox = document.getElementById('is-installment');
         const isInstallment = (type === 'expense' && isInstallmentCheckbox && isInstallmentCheckbox.checked);
         
@@ -1044,7 +1045,6 @@ document.getElementById('entry-form').addEventListener('submit', function(e) {
         }
         
         const baseDate = new Date(startDateVal);
-
         const checkedCategory = document.querySelector('input[name="category"]:checked');
         const categoryId = checkedCategory ? checkedCategory.value : (type === 'expense' ? expCategories[0]?.id : incCategories[0]?.id);
         
@@ -1068,7 +1068,7 @@ document.getElementById('entry-form').addEventListener('submit', function(e) {
             }
 
             if (updateAllFuture && originalEntry.isFixed && originalEntry.isRepeating) {
-                // 고정비 반복 일괄 수정
+                // 1. 고정비 반복 일괄 수정
                 entries.forEach(e => {
                     if (e.isFixed && e.isRepeating && e.categoryId === originalEntry.categoryId && e.place === originalEntry.place && new Date(e.date) >= new Date(originalEntry.date)) {
                         e.place = place;
@@ -1078,9 +1078,10 @@ document.getElementById('entry-form').addEventListener('submit', function(e) {
                         e.paymentId = paymentId;
                     }
                 });
-                cancelEdit();
+                finishFormSubmission(baseDate, startDateVal);
+                return;
             } else if (updateAllFuture && originalEntry && originalEntry.groupId) {
-                // 기존 할부 그룹 전체 수정 (원금 기준 재분할)
+                // 2. 기존 할부 그룹 전체 수정 (원금 기준 재분할)
                 entries = entries.filter(e => e.groupId !== originalEntry.groupId);
                 
                 const splitAmount = Math.floor(totalAmount / months);
@@ -1114,69 +1115,81 @@ document.getElementById('entry-form').addEventListener('submit', function(e) {
                     };
                     entries.unshift(entryData);
                 }
-                cancelEdit();
+                finishFormSubmission(baseDate, startDateVal);
+                return;
             } else {
-                // 💡 단건 수정이거나, 일시불 내역을 수정하면서 '할부'로 새로 전환하는 경우
+                // 3. 단건 수정인 경우 (또는 일시불 -> 할부로 전환하는 경우)
                 if (isInstallment) {
-                    // 기존 일시불 데이터 삭제 후 아래에서 할부 생성 로직 타도록 함
+                    // 일시불을 할부로 전환할 때만 기존 단건 삭제 후 아래에서 할부 생성 로직 탐
                     if (originalEntry && originalEntry.groupId) {
                         entries = entries.filter(e => e.groupId !== originalEntry.groupId);
                     } else {
                         entries = entries.filter(e => String(e.id) !== String(editingId));
                     }
                 } else {
-                    // 일반 단건 수정 (할부 미선택 유지): 기존 데이터 직접 갱신
+                    // 💡 [핵심] 일반 단건 수정: 기존 ID를 유지한 채 데이터만 정확히 덮어씌움 (중복 생성 원천 차단)
                     const index = entries.findIndex(e => String(e.id) === String(editingId));
                     if (index !== -1) {
                         entries[index] = {
                             ...entries[index],
-                            type, date: startDateVal, categoryId, paymentId, place, item, amount: totalAmount, isFixed, isRepeating, groupId: null
+                            type,
+                            date: startDateVal,
+                            categoryId,
+                            paymentId,
+                            place,
+                            item,
+                            amount: totalAmount,
+                            isFixed,
+                            isRepeating,
+                            groupId: null
                         };
                     }
-                    cancelEdit();
+                    finishFormSubmission(baseDate, startDateVal);
+                    return; // 수정 완료 후 함수 즉시 종료 (중복 생성 방지)
                 }
             }
         }
 
-        // 💡 신규 등록이거나, 일시불/단건에서 할부로 새로 전환되어 기존 데이터가 제거된 경우 실행
-        if (!editingId || (editingId && isInstallment)) {
-            const splitAmount = Math.floor(totalAmount / months);
-            const remainder = totalAmount % months; 
-            const newGroupId = isInstallment ? 'group_' + Date.now() : null;
+        // 4. 신규 등록이거나, 일시불에서 할부로 새로 전환되어 기존 데이터가 제거된 경우
+        const splitAmount = Math.floor(totalAmount / months);
+        const remainder = totalAmount % months; 
+        const newGroupId = isInstallment ? 'group_' + Date.now() : null;
 
-            for (let i = 0; i < months; i++) {
-                let targetYear = baseDate.getFullYear();
-                let targetMonth = baseDate.getMonth() + i;
-                let originalDay = baseDate.getDate();
+        for (let i = 0; i < months; i++) {
+            let targetYear = baseDate.getFullYear();
+            let targetMonth = baseDate.getMonth() + i;
+            let originalDay = baseDate.getDate();
 
-                let lastDayOfTargetMonth = new Date(targetYear, targetMonth + 1, 0).getDate();
-                let targetDay = Math.min(originalDay, lastDayOfTargetMonth);
+            let lastDayOfTargetMonth = new Date(targetYear, targetMonth + 1, 0).getDate();
+            let targetDay = Math.min(originalDay, lastDayOfTargetMonth);
 
-                let targetDate = new Date(targetYear, targetMonth, targetDay);
-                let amountToApply = splitAmount + (i === 0 ? remainder : 0);
-                let itemLabel = months > 1 ? `${item} (${i+1}/${months}회차)` : item;
+            let targetDate = new Date(targetYear, targetMonth, targetDay);
+            let amountToApply = splitAmount + (i === 0 ? remainder : 0);
+            let itemLabel = months > 1 ? `${item} (${i+1}/${months}회차)` : item;
 
-                const entryData = {
-                    id: 'id_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5), 
-                    type: type,
-                    date: getLocalDateString(targetDate),
-                    categoryId: categoryId,
-                    paymentId: paymentId,
-                    place: place,
-                    item: itemLabel,
-                    amount: amountToApply,
-                    isFixed: isFixed,
-                    isRepeating: isRepeating,
-                    groupId: newGroupId
-                };
-                entries.unshift(entryData);
-            }
-            cancelEdit();
+            const entryData = {
+                id: 'id_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5), 
+                type: type,
+                date: getLocalDateString(targetDate),
+                categoryId: categoryId,
+                paymentId: paymentId,
+                place: place,
+                item: itemLabel,
+                amount: amountToApply,
+                isFixed: isFixed,
+                isRepeating: isRepeating,
+                groupId: newGroupId
+            };
+            entries.unshift(entryData);
         }
 
+        finishFormSubmission(baseDate, startDateVal);
+    });
+
+    // 💡 폼 저장 및 입력창 초기화를 담당하는 공통 헬퍼 함수
+    function finishFormSubmission(baseDate, startDateVal) {
         saveData();
         
-        // 폼 초기화 및 상태 정리
         document.getElementById('place').value = '';
         document.getElementById('amount').value = '';
         document.getElementById('item').value = '';
@@ -1197,7 +1210,7 @@ document.getElementById('entry-form').addEventListener('submit', function(e) {
         currentMonth = baseDate.getMonth();
         selectDate(startDateVal); 
         updateUI();
-    });
+    }
     
 function deleteEntry(id) {
         const targetEntry = entries.find(e => String(e.id) === String(id));
