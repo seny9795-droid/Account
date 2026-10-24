@@ -933,7 +933,7 @@
         updateDashboardStats();
     }
 
-    document.getElementById('entry-form').addEventListener('submit', function(e) {
+ document.getElementById('entry-form').addEventListener('submit', function(e) {
         e.preventDefault();
         const type = document.getElementById('type-expense').checked ? 'expense' : 'income';
         const totalAmount = parseInt(document.getElementById('amount').value);
@@ -955,26 +955,42 @@
             const originalEntry = entries.find(e => e.id === editingId);
             let updateAllFuture = false;
 
-            if (originalEntry && originalEntry.isFixed && originalEntry.isRepeating) {
-                const choice = confirm("고정비 반복 항목입니다.\n\n[확인] 이후 반복되는 모든 건을 함께 수정\n[취소] 현재 선택한 해당 건만 수정");
+            if (originalEntry && ((originalEntry.isFixed && originalEntry.isRepeating) || originalEntry.groupId)) {
+                const choice = confirm("반복 또는 할부 항목입니다.\n\n[확인] 이후 반복되는 모든 건(또는 동일 할부 그룹)을 함께 수정\n[취소] 현재 선택한 해당 건만 수정");
                 updateAllFuture = choice;
             }
 
             if (updateAllFuture) {
-                entries.forEach(e => {
-                    if (e.isFixed && e.isRepeating && e.categoryId === originalEntry.categoryId && e.place === originalEntry.place && new Date(e.date) >= new Date(originalEntry.date)) {
-                        e.place = place;
-                        e.item = item;
-                        e.amount = totalAmount;
-                        e.categoryId = categoryId;
-                        e.paymentId = paymentId;
-                    }
-                });
+                if (originalEntry.isFixed && originalEntry.isRepeating) {
+                    // 고정비 반복 일괄 수정
+                    entries.forEach(e => {
+                        if (e.isFixed && e.isRepeating && e.categoryId === originalEntry.categoryId && e.place === originalEntry.place && new Date(e.date) >= new Date(originalEntry.date)) {
+                            e.place = place;
+                            e.item = item;
+                            e.amount = totalAmount;
+                            e.categoryId = categoryId;
+                            e.paymentId = paymentId;
+                        }
+                    });
+                } else if (originalEntry.groupId) {
+                    // 할부 그룹 전체 일괄 수정
+                    entries.forEach(e => {
+                        if (e.groupId === originalEntry.groupId) {
+                            e.place = place;
+                            e.categoryId = categoryId;
+                            e.paymentId = paymentId;
+                            let match = e.item.match(/\(\d+\/\d+회차\)/);
+                            let 회차표기 = match ? match[0] : '';
+                            e.item = item + (회차표기 ? ' ' + 회차표기 : '');
+                        }
+                    });
+                }
             } else {
                 const index = entries.findIndex(e => e.id === editingId);
                 if (index !== -1) {
                     entries[index] = {
-                        id: editingId, type, date: startDateVal, categoryId, paymentId, place, item, amount: totalAmount, isFixed, isRepeating
+                        ...entries[index],
+                        type, date: startDateVal, categoryId, paymentId, place, item, amount: totalAmount, isFixed, isRepeating
                     };
                 }
             }
@@ -982,6 +998,7 @@
         } else {
             const splitAmount = Math.floor(totalAmount / months);
             const remainder = totalAmount % months; 
+            const newGroupId = isInstallment ? 'group_' + Date.now() : null;
 
             for (let i = 0; i < months; i++) {
                 let targetDate = new Date(baseDate.getFullYear(), baseDate.getMonth() + i, baseDate.getDate());
@@ -989,7 +1006,7 @@
                 let itemLabel = months > 1 ? `${item} (${i+1}/${months}회차)` : item;
 
                 const entryData = {
-                    id: Date.now() + i, 
+                    id: Date.now() + i + Math.random(), 
                     type: type,
                     date: getLocalDateString(targetDate),
                     categoryId: categoryId,
@@ -998,7 +1015,8 @@
                     item: itemLabel,
                     amount: amountToApply,
                     isFixed: isFixed,
-                    isRepeating: isRepeating
+                    isRepeating: isRepeating,
+                    groupId: newGroupId
                 };
                 entries.unshift(entryData);
             }
@@ -1023,10 +1041,16 @@
         updateUI();
     });
 
-    function editEntry(id) {
+ function editEntry(id) {
         const ent = entries.find(e => e.id === id); editingId = id;
         document.getElementById(`type-${ent.type}`).click(); 
-        document.getElementById('date').value = ent.date; document.getElementById('place').value = ent.place; document.getElementById('amount').value = ent.amount; document.getElementById('item').value = ent.item;
+        document.getElementById('date').value = ent.date; 
+        document.getElementById('place').value = ent.place; 
+        document.getElementById('amount').value = ent.amount; 
+        
+        let cleanItem = ent.item.replace(/\s\(\d+\/\d+회차\)/, '');
+        document.getElementById('item').value = cleanItem;
+
         setTimeout(() => {
             const catEl = document.getElementById(ent.categoryId); if(catEl) catEl.checked = true;
             if(ent.type === 'expense') {
