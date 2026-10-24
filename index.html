@@ -211,6 +211,28 @@
         .modal-btn { flex: 1; padding: 12px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; }
         .modal-btn-confirm { background: var(--primary); color: white; }
         .modal-btn-cancel { background: #ccc; color: #333; }
+
+        /* 💡 2번 반영: 달력과 상세 내역을 좌우로 나란히 배치하는 스타일 */
+    .calendar-and-detail-container {
+        display: flex;
+        gap: 20px;
+        align-items: flex-start;
+    }
+    .calendar-main-pane { flex: 1; }
+    .daily-detail-side-pane { 
+        width: 320px; 
+        margin-top: 32px; 
+        border: 1px solid #eee; 
+        border-radius: 16px; 
+        padding: 20px; 
+        background: #fff; 
+        box-sizing: border-box;
+        display: none; 
+    }
+    @media (max-width: 900px) {
+        .calendar-and-detail-container { flex-direction: column; }
+        .daily-detail-side-pane { width: 100%; margin-top: 16px; }
+    }
     </style>
 </head>
 <body>
@@ -1198,7 +1220,12 @@
     }
 
     function selectDate(dateStr) {
-        selectedDateStr = dateStr; renderCalendar(); 
+        selectedDateStr = dateStr; 
+        
+        // 💡 1번 반영: 달력 날짜 클릭 시 입력 폼의 날짜를 해당 일자로 자동 연동
+        document.getElementById('date').value = dateStr;
+        
+        renderCalendar(); 
         const listEl = document.getElementById('daily-entry-list');
         document.getElementById('daily-detail-title').innerText = `${parseInt(dateStr.split('-')[1])}월 ${parseInt(dateStr.split('-')[2])}일 상세 내역`;
         
@@ -1213,13 +1240,13 @@
                     const pay = payments.find(p => p.id === ent.paymentId);
                     badges += `<span class="badge" style="background-color: #34495e">${pay?.name || '삭제됨'}</span>`;
                     if (ent.isFixed) badges += `<span class="badge badge-fixed">고정비</span>`;
+                    if (ent.groupId) badges += `<span class="badge badge-installment">할부</span>`;
                 }
                 listEl.innerHTML += `<li class="expense-item"><div style="flex: 1;"><div class="item-badges">${badges}</div><div class="item-main-text">${ent.place}</div><div class="item-sub-text">${ent.item}</div></div><div><span class="${ent.type==='expense'?'amount-exp':'amount-inc'}">${ent.type==='expense'?'-':'+'}${ent.amount.toLocaleString()}원</span><div class="item-actions"><button type="button" class="action-btn edit-btn" onclick="editEntry(${ent.id})">수정</button><button type="button" class="action-btn delete-btn" onclick="deleteEntry(${ent.id})">삭제</button></div></div></li>`;
             });
         }
         document.getElementById('daily-detail-section').style.display = 'block';
     }
-
     function closeDailyDetails() { selectedDateStr = null; document.getElementById('daily-detail-section').style.display = 'none'; renderCalendar(); }
 
     function calculateSelectedMonthTotals() {
