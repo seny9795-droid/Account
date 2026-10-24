@@ -1004,6 +1004,7 @@ document.getElementById('entry-form').addEventListener('submit', function(e) {
             }
 
             if (updateAllFuture && originalEntry.isFixed && originalEntry.isRepeating) {
+                // 1. 고정비 반복 일괄 수정
                 entries.forEach(e => {
                     if (e.isFixed && e.isRepeating && e.categoryId === originalEntry.categoryId && e.place === originalEntry.place && new Date(e.date) >= new Date(originalEntry.date)) {
                         e.place = place;
@@ -1014,6 +1015,7 @@ document.getElementById('entry-form').addEventListener('submit', function(e) {
                     }
                 });
             } else if (updateAllFuture && originalEntry.groupId) {
+                // 2. 💡 할부 그룹 전체 일괄 수정: 기존 그룹 내 모든 회차를 확실하게 제거한 뒤 새로 연동 생성
                 entries = entries.filter(e => e.groupId !== originalEntry.groupId);
                 
                 const splitAmount = Math.floor(totalAmount / months);
@@ -1048,6 +1050,7 @@ document.getElementById('entry-form').addEventListener('submit', function(e) {
                     entries.unshift(entryData);
                 }
             } else {
+                // 3. 단건 수정인 경우
                 if (originalEntry && originalEntry.groupId) {
                     entries = entries.filter(e => String(e.id) !== String(editingId));
                 } else {
@@ -1061,6 +1064,7 @@ document.getElementById('entry-form').addEventListener('submit', function(e) {
                 }
             }
         } else {
+            // 4. 신규 등록인 경우
             const splitAmount = Math.floor(totalAmount / months);
             const remainder = totalAmount % months; 
             const newGroupId = isInstallment ? 'group_' + Date.now() : null;
@@ -1115,7 +1119,6 @@ document.getElementById('entry-form').addEventListener('submit', function(e) {
         selectDate(startDateVal); 
         updateUI();
     });
-
 function deleteEntry(id) {
         const targetEntry = entries.find(e => String(e.id) === String(id));
         if (!targetEntry) return;
