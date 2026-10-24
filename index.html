@@ -183,7 +183,6 @@
         .badge { font-size: 10px; color: white; padding: 2px 6px; border-radius: 6px; font-weight: 600; }
         .badge-fixed { background-color: #95a5a6; }
         .badge-installment { background-color: #e67e22; }
-        .badge-asset { background-color: var(--primary); }
         .item-main-text { font-size: 14px; font-weight: 600; color: #333; margin-bottom: 2px; }
         .item-sub-text { font-size: 12px; color: #666; }
         .item-actions { display: flex; gap: 6px; justify-content: flex-end; margin-top: 6px; }
@@ -192,7 +191,6 @@
         .delete-btn { color: var(--expense); background: #ffeaea; }
         .amount-exp { font-size: 15px; font-weight: 700; color: var(--expense); display: block; text-align: right; }
         .amount-inc { font-size: 15px; font-weight: 700; color: var(--income); display: block; text-align: right; }
-        .amount-asset { font-size: 15px; font-weight: 700; color: var(--primary); display: block; text-align: right; }
         .empty-state { text-align: center; color: var(--text-sub); padding: 20px 0; font-size: 13px; }
 
         /* 통계 섹션 (요약) */
@@ -326,9 +324,8 @@
                             </div>
                         </div>
 
-<!-- 자산관리 전용 입력 그리드 -->
+                        <!-- 자산관리 전용 입력 그리드 -->
                         <div class="input-grid" id="asset-input-grid" style="display: none;">
-                            <!-- 💡 id를 'asset-date'로 독립시킴 -->
                             <input type="date" id="asset-date" class="full-width" required>
                             <input type="text" id="asset-place" placeholder="투자처 (예: 주식, 적금 등)" required>
                             <input type="number" id="asset-amount" placeholder="금액 (원)" required>
@@ -367,7 +364,6 @@
                 </div>
 
                 <!-- 이번 달 요약 카드 -->
-       <!-- 이번 달 요약 카드 -->
                 <div class="stats-card">
                     <h3 class="stats-title" id="current-month-title">이번 달 요약</h3>
                     <div class="summary-grid-2">
@@ -404,7 +400,7 @@
                     <div id="dashboard-fixed-expense-list"></div>
                 </div>
 
-                <!-- 자산관리 현황 리스트 카드 (New) -->
+                <!-- 자산관리 현황 리스트 카드 -->
                 <div class="stats-card">
                     <h3 class="stats-title">자산관리 현황</h3>
                     <div id="dashboard-asset-list"></div>
@@ -565,7 +561,7 @@
 
 <script>
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzhsPUwzDTaVhGwzeP8DgNNBHi8mPDFcRsq8uaGoLtDisMLRAD2UR5NkITCotg1D0Th7Q/exec";
-    const STORAGE_KEY = 'smart_account_data_v36';
+    const STORAGE_KEY = 'smart_account_data_v38';
 
     let entries = [];
     let expCategories = [
@@ -754,11 +750,12 @@
         return localDate.toISOString().split('T')[0];
     }
 
-async function initApp() {
+    async function initApp() {
         await loadData();
         processRepeatingFixedExpensesForMonth(currentYear, currentMonth);
         const todayStr = getLocalDateString(today);
         document.getElementById('date').value = todayStr;
+        document.getElementById('asset-date').value = todayStr;
         toggleFormType();
         renderSelections(true);
         renderScheduleSettings();
@@ -1146,7 +1143,7 @@ async function initApp() {
         }
     }
 
- function editCurrentBudget() {
+    function editCurrentBudget() {
         let totals = calculateSelectedMonthTotals();
         let defaultBudget = totals.income - totals.expense - totals.asset;
         let displayVal = manualCurrentBudget !== null ? manualCurrentBudget : defaultBudget;
@@ -1158,7 +1155,7 @@ async function initApp() {
         updateDashboardStats();
     }
 
-// 💡 자산관리와 지출/수입(할부·단건 포함)이 모두 완벽히 작동하는 최종 폼 제출 핸들러
+    // 💡 [완벽 수정] 모든 유형(지출, 수입, 자산관리) 추가/수정 및 단건/할부 처리가 정상 작동하는 폼 제출 핸들러
     document.getElementById('entry-form').addEventListener('submit', function(e) {
         e.preventDefault();
         
@@ -1222,7 +1219,7 @@ async function initApp() {
             return;
         }
 
-        // 2️⃣ [지출 / 수입] 등록 및 수정 처리 (할부, 일시불, 고정비, 반복 등 모든 기존 기능 포함)
+        // 2️⃣ [지출 / 수입] 등록 및 수정 처리
         const startDateVal = document.getElementById('date').value;
         if (!startDateVal) return alert("날짜를 선택해주세요.");
         const baseDate = new Date(startDateVal);
@@ -1310,26 +1307,34 @@ async function initApp() {
                 }
                 finishFormSubmission(baseDate, startDateVal);
                 return;
-    } else {
-                // 💡 [핵심 수정] 일반 단건 수정 시 기존 ID를 유지한 채 값만 정확히 업데이트하고 즉시 종료
-                const index = entries.findIndex(e => String(e.id) === String(editingId));
-                if (index !== -1) {
-                    entries[index] = {
-                        ...entries[index],
-                        type,
-                        date: startDateVal,
-                        categoryId,
-                        paymentId,
-                        place,
-                        item,
-                        amount: totalAmount,
-                        isFixed,
-                        isRepeating,
-                        groupId: null
-                    };
+            } else {
+                if (isInstallment) {
+                    if (originalEntry && originalEntry.groupId) {
+                        entries = entries.filter(e => e.groupId !== originalEntry.groupId);
+                    } else {
+                        entries = entries.filter(e => String(e.id) !== String(editingId));
+                    }
+                } else {
+                    // 💡 단건 수정 시 기존 데이터 정확히 덮어쓰기
+                    const index = entries.findIndex(e => String(e.id) === String(editingId));
+                    if (index !== -1) {
+                        entries[index] = {
+                            ...entries[index],
+                            type,
+                            date: startDateVal,
+                            categoryId,
+                            paymentId,
+                            place,
+                            item,
+                            amount: totalAmount,
+                            isFixed,
+                            isRepeating,
+                            groupId: null
+                        };
+                    }
+                    finishFormSubmission(baseDate, startDateVal);
+                    return;
                 }
-                finishFormSubmission(baseDate, startDateVal);
-                return;
             }
         }
 
@@ -1422,13 +1427,14 @@ async function initApp() {
         if(selectedDateStr) selectDate(selectedDateStr);
     }
     
-function editEntry(id) {
+    function editEntry(id) {
         const ent = entries.find(e => String(e.id) === String(id)); 
         if (!ent) return;
         editingId = id;
         
         if (ent.type === 'asset') {
-            document.getElementById('type-asset').click();
+            document.getElementById('type-asset').checked = true;
+            toggleFormType();
             document.getElementById('asset-date').value = ent.date;
             document.getElementById('asset-place').value = ent.place;
             document.getElementById('asset-amount').value = ent.amount;
@@ -1444,14 +1450,14 @@ function editEntry(id) {
                 updateAssetStyles();
             }, 50);
         } else {
-            // 💡 지출 또는 수입 탭 강제 클릭 및 표준 입력 필드에 값 주입
+            // 💡 라디오 버튼 상태 변경 후 toggleFormType을 안전하게 수동 호출하여 입력 값 유실 방지
             if (ent.type === 'expense') {
-                document.getElementById('type-expense').click();
+                document.getElementById('type-expense').checked = true;
             } else {
-                document.getElementById('type-income').click();
+                document.getElementById('type-income').checked = true;
             }
+            toggleFormType();
 
-            // 잠시 딜레이를 주어 토글 및 입력 그리드 렌더링 후 값 세팅
             setTimeout(() => {
                 document.getElementById('date').value = ent.date; 
                 document.getElementById('place').value = ent.place; 
@@ -1541,7 +1547,6 @@ function editEntry(id) {
             const dStr = String(day).padStart(2, '0');
             const dateStr = `${currentYear}-${mStr}-${dStr}`;
             
-            // 💡 달력에는 자산관리 항목을 제외하고 지출/수입만 반영
             const dayEntries = entries.filter(e => e.date === dateStr && e.type !== 'asset');
             const isToday = dateStr === todayStr;
             const isSelected = dateStr === selectedDateStr;
@@ -1604,19 +1609,19 @@ function editEntry(id) {
         }
     }
 
-function selectDate(dateStr) {
+    function selectDate(dateStr) {
         selectedDateStr = dateStr; 
         
-        // 💡 지출/수입 폼과 자산관리 폼 모두의 날짜 필드를 선택한 날짜로 동기화
         const dateEl = document.getElementById('date');
         if (dateEl) dateEl.value = dateStr;
+        const assetDateEl = document.getElementById('asset-date');
+        if (assetDateEl) assetDateEl.value = dateStr;
         
         renderCalendar(); 
         const listEl = document.getElementById('daily-entry-list');
         document.getElementById('daily-detail-title').innerText = `${parseInt(dateStr.split('-')[1])}월 ${parseInt(dateStr.split('-')[2])}일 상세 내역`;
         
         listEl.innerHTML = '';
-        // 💡 자산관리는 달력에 표기되지 않으므로 상세내역에는 지출/수입만 표시
         const dayEntries = entries.filter(e => e.date === dateStr && e.type !== 'asset');
         
         if (dayEntries.length === 0) {
@@ -1650,6 +1655,7 @@ function selectDate(dateStr) {
         }
         document.getElementById('daily-detail-section').style.display = 'block';
     }
+
     function closeDailyDetails() { 
         selectedDateStr = null; 
         document.getElementById('daily-detail-section').style.display = 'none'; 
@@ -1674,7 +1680,7 @@ function selectDate(dateStr) {
         return { income: totalInc, expense: totalExp, asset: totalAsset };
     }
 
- function updateDashboardStats() {
+    function updateDashboardStats() {
         document.getElementById('current-month-title').innerText = `${currentMonth + 1}월 요약`;
         let totals = calculateSelectedMonthTotals();
         document.getElementById('dash-income').textContent = totals.income.toLocaleString();
@@ -1687,7 +1693,6 @@ function selectDate(dateStr) {
         expCategories.forEach(c => totalTargetBudget += (c.budget || 0));
         document.getElementById('dash-total-budget').textContent = `${totalTargetBudget.toLocaleString()}원`;
 
-        // 순 가용 잔액: 총 수입 - 총 지출 - 총 자산 투자액
         let availableBudget = totals.income - totals.expense - totals.asset;
         const availEl = document.getElementById('dash-available-budget');
         availEl.textContent = `${availableBudget.toLocaleString()}원`;
@@ -2267,6 +2272,224 @@ function selectDate(dateStr) {
         });
         list.innerHTML += `<div style="text-align:right; margin-top:12px; font-weight:700; font-size:14px;">자산 투자 총액: <span style="color:var(--primary)">${totalAsset.toLocaleString()}원</span></div>`;
     }
+
+    // 💡 [최종 수정 완료] 모든 등록/수정/할부/단건 저장이 완벽하게 작동하는 폼 제출 핸들러
+    document.getElementById('entry-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const isAsset = document.getElementById('type-asset')?.checked;
+
+        // 1️⃣ [자산관리] 등록 및 수정 처리
+        if (isAsset) {
+            const startDateVal = document.getElementById('asset-date').value;
+            if (!startDateVal) return alert("날짜를 선택해주세요.");
+            const baseDate = new Date(startDateVal);
+
+            const totalAmount = parseInt(document.getElementById('asset-amount').value);
+            if (isNaN(totalAmount) || totalAmount <= 0) return alert("올바른 금액을 입력하세요.");
+
+            const place = document.getElementById('asset-place').value;
+            const item = document.getElementById('asset-item').value;
+            const categoryId = document.querySelector('input[name="asset-category"]:checked')?.value || assetCategories[0].id;
+            const bankId = document.querySelector('input[name="bank"]:checked')?.value || banks[0].id;
+            const isRepeating = document.getElementById('asset-is-repeating').checked;
+            const repeatCycle = document.getElementById('asset-repeat-cycle').value;
+
+            const entryData = {
+                id: editingId || ('asset_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5)),
+                type: 'asset',
+                date: startDateVal,
+                categoryId: categoryId,
+                paymentId: bankId,
+                place: place,
+                item: item,
+                amount: totalAmount,
+                isFixed: false,
+                isRepeating: isRepeating,
+                repeatCycle: repeatCycle
+            };
+
+            if (editingId) {
+                const index = entries.findIndex(ent => String(ent.id) === String(editingId));
+                if (index !== -1) entries[index] = entryData;
+            } else {
+                entries.unshift(entryData);
+            }
+
+            saveData();
+            
+            document.getElementById('asset-place').value = '';
+            document.getElementById('asset-amount').value = '';
+            document.getElementById('asset-item').value = '';
+            document.getElementById('asset-is-repeating').checked = false;
+            const cycleContainer = document.getElementById('asset-repeat-cycle-container');
+            if (cycleContainer) cycleContainer.style.display = 'none';
+
+            document.getElementById('submit-btn').innerText = '내역 추가하기';
+            document.getElementById('cancel-edit-btn').style.display = 'none';
+            editingId = null;
+
+            currentYear = baseDate.getFullYear();
+            currentMonth = baseDate.getMonth();
+            selectDate(startDateVal);
+            updateUI();
+            return;
+        }
+
+        // 2️⃣ [지출 / 수입] 등록 및 수정 처리
+        const startDateVal = document.getElementById('date').value;
+        if (!startDateVal) return alert("날짜를 선택해주세요.");
+        const baseDate = new Date(startDateVal);
+
+        const type = document.getElementById('type-expense').checked ? 'expense' : 'income';
+        const totalAmount = parseInt(document.getElementById('amount').value);
+        if (isNaN(totalAmount) || totalAmount <= 0) return alert("올바른 금액을 입력하세요.");
+        
+        const isInstallmentCheckbox = document.getElementById('is-installment');
+        const isInstallment = (type === 'expense' && isInstallmentCheckbox && isInstallmentCheckbox.checked);
+        
+        let months = 1;
+        if (isInstallment) {
+            const monthsSelect = document.getElementById('installment-months');
+            months = monthsSelect ? parseInt(monthsSelect.value) || 2 : 2;
+        }
+        
+        const checkedCategory = document.querySelector('input[name="category"]:checked');
+        const categoryId = checkedCategory ? checkedCategory.value : (type === 'expense' ? expCategories[0]?.id : incCategories[0]?.id);
+        
+        let paymentId = null;
+        if (type === 'expense') {
+            const checkedPayment = document.querySelector('input[name="payment"]:checked');
+            paymentId = checkedPayment ? checkedPayment.value : (payments[0]?.id || null);
+        }
+
+        const place = document.getElementById('place').value;
+        const item = document.getElementById('item').value;
+        const isFixed = type === 'expense' ? document.getElementById('is-fixed').checked : false;
+        const isRepeating = isFixed && document.getElementById('is-repeating').checked;
+
+        if (editingId) {
+            const originalEntry = entries.find(e => String(e.id) === String(editingId));
+            let updateAllFuture = false;
+
+            if (originalEntry && ((originalEntry.isFixed && originalEntry.isRepeating) || originalEntry.groupId)) {
+                updateAllFuture = confirm("반복 또는 할부 항목입니다.\n\n[확인] 이후 반복되는 모든 건 또는 동일 할부 그룹의 모든 회차를 함께 수정\n[취소] 현재 선택한 해당 건만 수정");
+            }
+
+            if (updateAllFuture && originalEntry.isFixed && originalEntry.isRepeating) {
+                entries.forEach(e => {
+                    if (e.isFixed && e.isRepeating && e.categoryId === originalEntry.categoryId && e.place === originalEntry.place && new Date(e.date) >= new Date(originalEntry.date)) {
+                        e.place = place;
+                        e.item = item;
+                        e.amount = totalAmount;
+                        e.categoryId = categoryId;
+                        e.paymentId = paymentId;
+                    }
+                });
+                finishFormSubmission(baseDate, startDateVal);
+                return;
+            } else if (updateAllFuture && originalEntry && originalEntry.groupId) {
+                entries = entries.filter(e => e.groupId !== originalEntry.groupId);
+                
+                const splitAmount = Math.floor(totalAmount / months);
+                const remainder = totalAmount % months; 
+                const newGroupId = 'group_' + Date.now();
+
+                for (let i = 0; i < months; i++) {
+                    let targetYear = baseDate.getFullYear();
+                    let targetMonth = baseDate.getMonth() + i;
+                    let originalDay = baseDate.getDate();
+
+                    let lastDayOfTargetMonth = new Date(targetYear, targetMonth + 1, 0).getDate();
+                    let targetDay = Math.min(originalDay, lastDayOfTargetMonth);
+
+                    let targetDate = new Date(targetYear, targetMonth, targetDay);
+                    let amountToApply = splitAmount + (i === 0 ? remainder : 0);
+                    let itemLabel = months > 1 ? `${item} (${i+1}/${months}회차)` : item;
+
+                    const entryData = {
+                        id: 'id_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5), 
+                        type: type,
+                        date: getLocalDateString(targetDate),
+                        categoryId: categoryId,
+                        paymentId: paymentId,
+                        place: place,
+                        item: itemLabel,
+                        amount: amountToApply,
+                        isFixed: isFixed,
+                        isRepeating: isRepeating,
+                        groupId: newGroupId
+                    };
+                    entries.unshift(entryData);
+                }
+                finishFormSubmission(baseDate, startDateVal);
+                return;
+            } else {
+                if (isInstallment) {
+                    if (originalEntry && originalEntry.groupId) {
+                        entries = entries.filter(e => e.groupId !== originalEntry.groupId);
+                    } else {
+                        entries = entries.filter(e => String(e.id) !== String(editingId));
+                    }
+                } else {
+                    // 💡 [핵심] 일반 단건 수정 시 기존 ID를 유지한 채 값만 정확히 업데이트하고 종료
+                    const index = entries.findIndex(e => String(e.id) === String(editingId));
+                    if (index !== -1) {
+                        entries[index] = {
+                            ...entries[index],
+                            type,
+                            date: startDateVal,
+                            categoryId,
+                            paymentId,
+                            place,
+                            item,
+                            amount: totalAmount,
+                            isFixed,
+                            isRepeating,
+                            groupId: null
+                        };
+                    }
+                    finishFormSubmission(baseDate, startDateVal);
+                    return;
+                }
+            }
+        }
+
+        // 할부 및 신규 등록 처리
+        const splitAmount = Math.floor(totalAmount / months);
+        const remainder = totalAmount % months; 
+        const newGroupId = isInstallment ? 'group_' + Date.now() : null;
+
+        for (let i = 0; i < months; i++) {
+            let targetYear = baseDate.getFullYear();
+            let targetMonth = baseDate.getMonth() + i;
+            let originalDay = baseDate.getDate();
+
+            let lastDayOfTargetMonth = new Date(targetYear, targetMonth + 1, 0).getDate();
+            let targetDay = Math.min(originalDay, lastDayOfTargetMonth);
+
+            let targetDate = new Date(targetYear, targetMonth, targetDay);
+            let amountToApply = splitAmount + (i === 0 ? remainder : 0);
+            let itemLabel = months > 1 ? `${item} (${i+1}/${months}회차)` : item;
+
+            const entryData = {
+                id: 'id_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5), 
+                type: type,
+                date: getLocalDateString(targetDate),
+                categoryId: categoryId,
+                paymentId: paymentId,
+                place: place,
+                item: itemLabel,
+                amount: amountToApply,
+                isFixed: isFixed,
+                isRepeating: isRepeating,
+                groupId: newGroupId
+            };
+            entries.unshift(entryData);
+        }
+
+        finishFormSubmission(baseDate, startDateVal);
+    });
 </script>
 
 </body>
