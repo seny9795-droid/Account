@@ -977,7 +977,6 @@ document.getElementById('entry-form').addEventListener('submit', function(e) {
         
         const startDateVal = document.getElementById('date').value;
         
-        // 할부 체크 및 개월 수 안전하게 읽어오기
         const isInstallmentCheckbox = document.getElementById('is-installment');
         const isInstallment = (type === 'expense' && isInstallmentCheckbox && isInstallmentCheckbox.checked);
         
@@ -1018,39 +1017,54 @@ document.getElementById('entry-form').addEventListener('submit', function(e) {
                 });
                 cancelEdit();
             } else if (updateAllFuture && originalEntry.groupId) {
-                // 기존 할부 그룹 전체 일괄 갱신
-                const groupEntries = entries.filter(e => e.groupId === originalEntry.groupId);
-                groupEntries.sort((a, b) => new Date(a.date) - new Date(b.date));
+                // 💡 할부 개월 수 변경 포함 전체 수정: 기존 할부 그룹 데이터를 싹 지우고 새 개월 수에 맞춰 완벽히 재생성
+                entries = entries.filter(e => e.groupId !== originalEntry.groupId);
                 
-                const newMonths = groupEntries.length;
-                const splitAmount = Math.floor(totalAmount / newMonths);
-                const remainder = totalAmount % newMonths;
+                const splitAmount = Math.floor(totalAmount / months);
+                const remainder = totalAmount % months; 
+                const newGroupId = 'group_' + Date.now();
 
-                groupEntries.forEach((e, idx) => {
-                    e.place = place;
-                    e.categoryId = categoryId;
-                    e.paymentId = paymentId;
-                    e.amount = splitAmount + (idx === 0 ? remainder : 0);
-                    
-                    let match = e.item.match(/\(\d+\/\d+회차\)/);
-                    let 회차표기 = match ? match[0] : `(${idx+1}/${newMonths}회차)`;
-                    e.item = item + ' ' + 회차표기;
-                });
+                for (let i = 0; i < months; i++) {
+                    let targetYear = baseDate.getFullYear();
+                    let targetMonth = baseDate.getMonth() + i;
+                    let originalDay = baseDate.getDate();
+
+                    let lastDayOfTargetMonth = new Date(targetYear, targetMonth + 1, 0).getDate();
+                    let targetDay = Math.min(originalDay, lastDayOfTargetMonth);
+
+                    let targetDate = new Date(targetYear, targetMonth, targetDay);
+                    let amountToApply = splitAmount + (i === 0 ? remainder : 0);
+                    let itemLabel = months > 1 ? `${item} (${i+1}/${months}회차)` : item;
+
+                    const entryData = {
+                        id: Date.now() + i + Math.random(), 
+                        type: type,
+                        date: getLocalDateString(targetDate),
+                        categoryId: categoryId,
+                        paymentId: paymentId,
+                        place: place,
+                        item: itemLabel,
+                        amount: amountToApply,
+                        isFixed: isFixed,
+                        isRepeating: isRepeating,
+                        groupId: newGroupId
+                    };
+                    entries.unshift(entryData);
+                }
                 cancelEdit();
             } else {
-                // 단건 수정이거나 새로 할부로 전환하는 경우: 기존 수정 대상을 삭제하고 아래 신규/할부 생성 로직을 탐
+                // 단건 수정이거나 일괄 수정을 원하지 않는 경우
                 if (originalEntry && originalEntry.groupId) {
-                    entries = entries.filter(e => e.groupId !== originalEntry.groupId);
+                    entries = entries.filter(e => e.id !== editingId); // 해당 회차만 제거 후 아래에서 신규 생성
                 } else {
                     entries = entries.filter(e => e.id !== editingId);
                 }
                 cancelEdit();
-                // 아래 신규 생성 로직으로 자연스럽게 이어짐
             }
         }
 
-        // 수정 모드가 아니거나, 수정 중 할부로 새로 전환된 경우 실행되는 생성 로직
-        if (!editingId) {
+        // 수정 모드가 아니거나, 기존 할부 그룹을 해제/재생성해야 하는 경우 실행
+        if (!editingId || (editingId && !entries.some(e => e.id === editingId))) {
             const splitAmount = Math.floor(totalAmount / months);
             const remainder = totalAmount % months; 
             const newGroupId = isInstallment ? 'group_' + Date.now() : null;
@@ -1060,7 +1074,6 @@ document.getElementById('entry-form').addEventListener('submit', function(e) {
                 let targetMonth = baseDate.getMonth() + i;
                 let originalDay = baseDate.getDate();
 
-                // 월말 오버플로우 방지 (예: 1월 31일 -> 2월 28일)
                 let lastDayOfTargetMonth = new Date(targetYear, targetMonth + 1, 0).getDate();
                 let targetDay = Math.min(originalDay, lastDayOfTargetMonth);
 
