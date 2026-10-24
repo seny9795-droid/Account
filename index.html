@@ -1310,33 +1310,26 @@ async function initApp() {
                 }
                 finishFormSubmission(baseDate, startDateVal);
                 return;
-            } else {
-                if (isInstallment) {
-                    if (originalEntry && originalEntry.groupId) {
-                        entries = entries.filter(e => e.groupId !== originalEntry.groupId);
-                    } else {
-                        entries = entries.filter(e => String(e.id) !== String(editingId));
-                    }
-                } else {
-                    const index = entries.findIndex(e => String(e.id) === String(editingId));
-                    if (index !== -1) {
-                        entries[index] = {
-                            ...entries[index],
-                            type,
-                            date: startDateVal,
-                            categoryId,
-                            paymentId,
-                            place,
-                            item,
-                            amount: totalAmount,
-                            isFixed,
-                            isRepeating,
-                            groupId: null
-                        };
-                    }
-                    finishFormSubmission(baseDate, startDateVal);
-                    return;
+    } else {
+                // 💡 [핵심 수정] 일반 단건 수정 시 기존 ID를 유지한 채 값만 정확히 업데이트하고 즉시 종료
+                const index = entries.findIndex(e => String(e.id) === String(editingId));
+                if (index !== -1) {
+                    entries[index] = {
+                        ...entries[index],
+                        type,
+                        date: startDateVal,
+                        categoryId,
+                        paymentId,
+                        place,
+                        item,
+                        amount: totalAmount,
+                        isFixed,
+                        isRepeating,
+                        groupId: null
+                    };
                 }
+                finishFormSubmission(baseDate, startDateVal);
+                return;
             }
         }
 
@@ -1429,7 +1422,7 @@ async function initApp() {
         if(selectedDateStr) selectDate(selectedDateStr);
     }
     
-    function editEntry(id) {
+function editEntry(id) {
         const ent = entries.find(e => String(e.id) === String(id)); 
         if (!ent) return;
         editingId = id;
@@ -1451,15 +1444,22 @@ async function initApp() {
                 updateAssetStyles();
             }, 50);
         } else {
-            document.getElementById(`type-${ent.type}`).click(); 
-            document.getElementById('date').value = ent.date; 
-            document.getElementById('place').value = ent.place; 
-            document.getElementById('amount').value = ent.amount; 
-            
-            let cleanItem = ent.item.replace(/\s\(\d+\/\d+회차\)/, '');
-            document.getElementById('item').value = cleanItem;
+            // 💡 지출 또는 수입 탭 강제 클릭 및 표준 입력 필드에 값 주입
+            if (ent.type === 'expense') {
+                document.getElementById('type-expense').click();
+            } else {
+                document.getElementById('type-income').click();
+            }
 
+            // 잠시 딜레이를 주어 토글 및 입력 그리드 렌더링 후 값 세팅
             setTimeout(() => {
+                document.getElementById('date').value = ent.date; 
+                document.getElementById('place').value = ent.place; 
+                document.getElementById('amount').value = ent.amount; 
+                
+                let cleanItem = ent.item.replace(/\s\(\d+\/\d+회차\)/, '');
+                document.getElementById('item').value = cleanItem;
+
                 const catEl = document.getElementById(ent.categoryId); if(catEl) catEl.checked = true;
                 if(ent.type === 'expense') {
                     const payEl = document.getElementById(ent.paymentId); if(payEl) payEl.checked = true;
