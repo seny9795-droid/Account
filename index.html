@@ -755,28 +755,47 @@
         }
     }
 
-    function toggleFormType() {
-        const isExpense = document.getElementById('type-expense').checked;
-        document.getElementById('payment-container').style.display = isExpense ? 'block' : 'none';
-        document.getElementById('fixed-expense-container').style.display = isExpense ? 'flex' : 'none';
-        document.getElementById('installment-toggle-wrapper').style.display = isExpense ? 'flex' : 'none';
-        if (!isExpense) {
-            document.getElementById('is-installment').checked = false;
-            document.getElementById('installment-months-container').style.display = 'none';
-        }
-        renderSelections(isExpense);
-    }
-
+// 1. 할부 체크박스 토글 시 개월 수 선택창 보이기/숨기기
     function toggleInstallment() {
         const isChecked = document.getElementById('is-installment').checked;
-        document.getElementById('installment-months-container').style.display = isChecked ? 'block' : 'none';
+        const monthsContainer = document.getElementById('installment-months-container');
+        if (monthsContainer) {
+            monthsContainer.style.display = isChecked ? 'block' : 'none';
+        }
     }
 
+    // 2. 고정비 체크박스 토글 시 반복 옵션 보이기/숨기기
     function toggleFixedOptions() {
-        const isFixed = document.getElementById('is-fixed').checked;
-        document.getElementById('fixed-options-container').style.display = isFixed ? 'block' : 'none';
+        const isChecked = document.getElementById('is-fixed').checked;
+        const fixedContainer = document.getElementById('fixed-options-container');
+        if (fixedContainer) {
+            fixedContainer.style.display = isChecked ? 'block' : 'none';
+        }
     }
 
+    // 3. 지출/수입 전환 시 할부 영역 노출 제어 (수입일 때는 할부 불가)
+    function toggleFormType() {
+        const isExpense = document.getElementById('type-expense').checked;
+        const installmentWrapper = document.getElementById('installment-toggle-wrapper');
+        const installmentMonthsContainer = document.getElementById('installment-months-container');
+        const fixedContainer = document.getElementById('fixed-expense-container');
+        const fixedOptionsContainer = document.getElementById('fixed-options-container');
+
+        if (installmentWrapper) {
+            installmentWrapper.style.display = isExpense ? 'block' : 'none';
+        }
+        if (!isExpense) {
+            if (document.getElementById('is-installment')) document.getElementById('is-installment').checked = false;
+            if (installmentMonthsContainer) installmentMonthsContainer.style.display = 'none';
+        }
+        if (fixedContainer) {
+            fixedContainer.style.display = isExpense ? 'block' : 'none';
+        }
+        if (!isExpense) {
+            if (document.getElementById('is-fixed')) document.getElementById('is-fixed').checked = false;
+            if (fixedOptionsContainer) fixedOptionsContainer.style.display = 'none';
+        }
+    }
     function renderSelections(isExpense) {
         const catList = document.getElementById('category-list');
         catList.innerHTML = '';
@@ -1011,7 +1030,6 @@ document.getElementById('entry-form').addEventListener('submit', function(e) {
         
         const startDateVal = document.getElementById('date').value;
         
-        // 💡 할부 체크 여부와 개월 수 안전하게 가져오기
         const isInstallmentCheckbox = document.getElementById('is-installment');
         const isInstallment = (type === 'expense' && isInstallmentCheckbox && isInstallmentCheckbox.checked);
         
@@ -1050,7 +1068,7 @@ document.getElementById('entry-form').addEventListener('submit', function(e) {
                     }
                 });
             } else if (updateAllFuture && originalEntry && originalEntry.groupId) {
-                // 할부 그룹 전체 수정 (원금 기준 재분할)
+                // 💡 [할부 핵심] 기존 할부 그룹을 전체 제거 후, 입력된 '총액(원금)'을 기준으로 새로운 개월 수에 맞춰 완벽히 재분할 생성
                 entries = entries.filter(e => e.groupId !== originalEntry.groupId);
                 
                 const splitAmount = Math.floor(totalAmount / months);
@@ -1062,6 +1080,7 @@ document.getElementById('entry-form').addEventListener('submit', function(e) {
                     let targetMonth = baseDate.getMonth() + i;
                     let originalDay = baseDate.getDate();
 
+                    // 월말 오버플로우 방지 (예: 1월 31일 -> 2월 28일)
                     let lastDayOfTargetMonth = new Date(targetYear, targetMonth + 1, 0).getDate();
                     let targetDay = Math.min(originalDay, lastDayOfTargetMonth);
 
@@ -1099,7 +1118,7 @@ document.getElementById('entry-form').addEventListener('submit', function(e) {
                 }
             }
         } else {
-            // 💡 신규 등록 시 할부 적용 (선택된 개월 수만큼 데이터 분할 생성)
+            // 💡 [신규 할부 생성] 선택한 개월 수 만큼 총액을 균등 분할하여 미래 달들로 데이터 생성
             const splitAmount = Math.floor(totalAmount / months);
             const remainder = totalAmount % months; 
             const newGroupId = isInstallment ? 'group_' + Date.now() : null;
@@ -1109,7 +1128,6 @@ document.getElementById('entry-form').addEventListener('submit', function(e) {
                 let targetMonth = baseDate.getMonth() + i;
                 let originalDay = baseDate.getDate();
 
-                // 월말 오버플로우 방지
                 let lastDayOfTargetMonth = new Date(targetYear, targetMonth + 1, 0).getDate();
                 let targetDay = Math.min(originalDay, lastDayOfTargetMonth);
 
@@ -1136,7 +1154,7 @@ document.getElementById('entry-form').addEventListener('submit', function(e) {
 
         saveData();
         
-        // 입력폼 및 할부 설정 초기화
+        // 입력폼 및 상태 초기화
         document.getElementById('place').value = '';
         document.getElementById('amount').value = '';
         document.getElementById('item').value = '';
@@ -1158,6 +1176,7 @@ document.getElementById('entry-form').addEventListener('submit', function(e) {
         selectDate(startDateVal); 
         updateUI();
     });
+    
 function deleteEntry(id) {
         const targetEntry = entries.find(e => String(e.id) === String(id));
         if (!targetEntry) return;
