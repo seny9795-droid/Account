@@ -1011,6 +1011,7 @@ document.getElementById('entry-form').addEventListener('submit', function(e) {
         
         const startDateVal = document.getElementById('date').value;
         
+        // 💡 할부 체크 여부와 개월 수 안전하게 가져오기
         const isInstallmentCheckbox = document.getElementById('is-installment');
         const isInstallment = (type === 'expense' && isInstallmentCheckbox && isInstallmentCheckbox.checked);
         
@@ -1038,7 +1039,7 @@ document.getElementById('entry-form').addEventListener('submit', function(e) {
             }
 
             if (updateAllFuture && originalEntry.isFixed && originalEntry.isRepeating) {
-                // 1. 고정비 반복 일괄 수정
+                // 고정비 반복 일괄 수정
                 entries.forEach(e => {
                     if (e.isFixed && e.isRepeating && e.categoryId === originalEntry.categoryId && e.place === originalEntry.place && new Date(e.date) >= new Date(originalEntry.date)) {
                         e.place = place;
@@ -1048,8 +1049,8 @@ document.getElementById('entry-form').addEventListener('submit', function(e) {
                         e.paymentId = paymentId;
                     }
                 });
-            } else if (updateAllFuture && originalEntry.groupId) {
-                // 2. 💡 할부 그룹 전체 일괄 수정: 기존 그룹 내 모든 회차를 확실하게 제거한 뒤 새로 연동 생성
+            } else if (updateAllFuture && originalEntry && originalEntry.groupId) {
+                // 할부 그룹 전체 수정 (원금 기준 재분할)
                 entries = entries.filter(e => e.groupId !== originalEntry.groupId);
                 
                 const splitAmount = Math.floor(totalAmount / months);
@@ -1084,7 +1085,7 @@ document.getElementById('entry-form').addEventListener('submit', function(e) {
                     entries.unshift(entryData);
                 }
             } else {
-                // 3. 단건 수정인 경우
+                // 단건 수정인 경우
                 if (originalEntry && originalEntry.groupId) {
                     entries = entries.filter(e => String(e.id) !== String(editingId));
                 } else {
@@ -1098,7 +1099,7 @@ document.getElementById('entry-form').addEventListener('submit', function(e) {
                 }
             }
         } else {
-            // 4. 신규 등록인 경우
+            // 💡 신규 등록 시 할부 적용 (선택된 개월 수만큼 데이터 분할 생성)
             const splitAmount = Math.floor(totalAmount / months);
             const remainder = totalAmount % months; 
             const newGroupId = isInstallment ? 'group_' + Date.now() : null;
@@ -1108,6 +1109,7 @@ document.getElementById('entry-form').addEventListener('submit', function(e) {
                 let targetMonth = baseDate.getMonth() + i;
                 let originalDay = baseDate.getDate();
 
+                // 월말 오버플로우 방지
                 let lastDayOfTargetMonth = new Date(targetYear, targetMonth + 1, 0).getDate();
                 let targetDay = Math.min(originalDay, lastDayOfTargetMonth);
 
@@ -1134,16 +1136,19 @@ document.getElementById('entry-form').addEventListener('submit', function(e) {
 
         saveData();
         
+        // 입력폼 및 할부 설정 초기화
         document.getElementById('place').value = '';
         document.getElementById('amount').value = '';
         document.getElementById('item').value = '';
         document.getElementById('is-fixed').checked = false;
         document.getElementById('is-repeating').checked = false;
         document.getElementById('fixed-options-container').style.display = 'none';
+        
         if(document.getElementById('is-installment')) {
             document.getElementById('is-installment').checked = false;
             document.getElementById('installment-months-container').style.display = 'none';
         }
+        
         document.getElementById('submit-btn').innerText = '내역 추가하기';
         document.getElementById('cancel-edit-btn').style.display = 'none';
         editingId = null;
