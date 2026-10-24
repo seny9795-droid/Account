@@ -1157,7 +1157,7 @@
         updateDashboardStats();
     }
 
-    // 통합 폼 제출 핸들러 (지출, 수입, 자산관리 완벽 지원)
+// 통합 폼 제출 핸들러 (자산관리 저장 및 화면 갱신 완벽 반영)
     document.getElementById('entry-form').addEventListener('submit', function(e) {
         e.preventDefault();
         const isAsset = document.getElementById('type-asset')?.checked;
@@ -1197,10 +1197,23 @@
             }
 
             saveData();
-            cancelEdit();
+            
+            // 폼 필드 초기화
+            document.getElementById('asset-place').value = '';
+            document.getElementById('asset-amount').value = '';
+            document.getElementById('asset-item').value = '';
+            document.getElementById('asset-is-repeating').checked = false;
+            document.getElementById('asset-repeat-cycle-container').style.display = 'none';
+
+            document.getElementById('submit-btn').innerText = '내역 추가하기';
+            document.getElementById('cancel-edit-btn').style.display = 'none';
+            editingId = null;
+
             currentYear = baseDate.getFullYear();
             currentMonth = baseDate.getMonth();
             selectDate(startDateVal);
+            
+            // 💡 [핵심] 자산관리 현황 및 요약판이 즉시 갱신되도록 updateUI 호출
             updateUI();
             return;
         }
