@@ -1004,7 +1004,7 @@ document.getElementById('entry-form').addEventListener('submit', function(e) {
             }
 
             if (updateAllFuture && originalEntry.isFixed && originalEntry.isRepeating) {
-                // 1. 고정비 반복 일괄 수정
+                // 고정비 반복 일괄 수정
                 entries.forEach(e => {
                     if (e.isFixed && e.isRepeating && e.categoryId === originalEntry.categoryId && e.place === originalEntry.place && new Date(e.date) >= new Date(originalEntry.date)) {
                         e.place = place;
@@ -1015,13 +1015,14 @@ document.getElementById('entry-form').addEventListener('submit', function(e) {
                     }
                 });
             } else if (updateAllFuture && originalEntry.groupId) {
-                // 2. 💡 할부 그룹 전체 수정 (개월 수 변경 포함): 기존 회차들을 싹 지우고 새 개월 수에 맞춰 완벽히 재생성
+                // 💡 할부 그룹 전체 수정 (원금 기준 총액으로 재분할 및 개월 수 변경 반영)
                 entries = entries.filter(e => e.groupId !== originalEntry.groupId);
                 
                 const splitAmount = Math.floor(totalAmount / months);
                 const remainder = totalAmount % months; 
                 const newGroupId = 'group_' + Date.now();
 
+                // 기존 첫 회차의 날짜를 기준으로 연속된 월 계산
                 for (let i = 0; i < months; i++) {
                     let targetYear = baseDate.getFullYear();
                     let targetMonth = baseDate.getMonth() + i;
@@ -1050,7 +1051,7 @@ document.getElementById('entry-form').addEventListener('submit', function(e) {
                     entries.unshift(entryData);
                 }
             } else {
-                // 3. 단건 수정인 경우
+                // 단건 수정인 경우
                 if (originalEntry && originalEntry.groupId) {
                     entries = entries.filter(e => e.id !== editingId);
                 } else {
@@ -1064,7 +1065,7 @@ document.getElementById('entry-form').addEventListener('submit', function(e) {
                 }
             }
         } else {
-            // 4. 신규 등록인 경우
+            // 신규 등록인 경우
             const splitAmount = Math.floor(totalAmount / months);
             const remainder = totalAmount % months; 
             const newGroupId = isInstallment ? 'group_' + Date.now() : null;
@@ -1100,7 +1101,6 @@ document.getElementById('entry-form').addEventListener('submit', function(e) {
 
         saveData();
         
-        // 폼 초기화 및 수정 모드 해제
         document.getElementById('place').value = '';
         document.getElementById('amount').value = '';
         document.getElementById('item').value = '';
@@ -1121,6 +1121,29 @@ document.getElementById('entry-form').addEventListener('submit', function(e) {
         updateUI();
     });
 
+    // 💡 할부 삭제 연동 기능이 포함된 삭제 함수
+    function deleteEntry(id) {
+        const targetEntry = entries.find(e => e.id === id);
+        if (!targetEntry) return;
+
+        let deleteGroup = false;
+        if (targetEntry.groupId) {
+            deleteGroup = confirm("할부 거래 내역입니다.\n\n[확인] 동일한 할부 그룹의 모든 회차를 함께 삭제\n[취소] 선택한 해당 회차만 삭제");
+        } else {
+            if (!confirm("정말 이 내역을 삭제하시겠습니까?")) return;
+        }
+
+        if (deleteGroup && targetEntry.groupId) {
+            entries = entries.filter(e => e.groupId !== targetEntry.groupId);
+        } else {
+            entries = entries.filter(e => e.id !== id);
+        }
+
+        if (editingId === id) cancelEdit();
+        saveData();
+        updateUI();
+        if(selectedDateStr) selectDate(selectedDateStr);
+    }
  function editEntry(id) {
         const ent = entries.find(e => e.id === id); editingId = id;
         document.getElementById(`type-${ent.type}`).click(); 
@@ -1153,16 +1176,6 @@ document.getElementById('entry-form').addEventListener('submit', function(e) {
         document.getElementById('is-repeating').checked = false;
         document.getElementById('fixed-options-container').style.display = 'none';
         document.getElementById('submit-btn').innerText = '내역 추가하기'; document.getElementById('cancel-edit-btn').style.display = 'none';
-    }
-
-    function deleteEntry(id) {
-        if(confirm("정말 이 내역을 삭제하시겠습니까?")) {
-            entries = entries.filter(e => e.id !== id);
-            if(editingId === id) cancelEdit();
-            saveData();
-            updateUI();
-            if(selectedDateStr) selectDate(selectedDateStr);
-        }
     }
 
     function updateUI() {
