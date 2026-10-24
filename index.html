@@ -92,7 +92,6 @@
         .type-toggle input[type="radio"] { display: none; }
         #type-expense:checked + label { background: #ffeaea; color: var(--expense); border-color: var(--expense); }
         #type-income:checked + label { background: #e9f7ef; color: var(--income); border-color: var(--income); }
-        #type-asset:checked + label { background: #e8f4fd; color: var(--primary); border-color: var(--primary); }
 
         .form-card {
             background: #fff;
@@ -264,20 +263,17 @@
     <!-- 1. 대시보드 탭 -->
     <div id="dashboard-section" class="section-content active-section">
         <div class="dashboard-grid">
-            <!-- 왼쪽: 입력 폼 영역 + 요약 + 고정지출 + 자산관리 리스트 -->
+            <!-- 왼쪽: 입력 폼 영역 + 요약 + 고정지출 -->
             <div class="left-panel">
                 <div class="type-toggle">
                     <input type="radio" id="type-expense" name="entry-type" value="expense" checked onchange="toggleFormType()">
                     <label for="type-expense">지출</label>
                     <input type="radio" id="type-income" name="entry-type" value="income" onchange="toggleFormType()">
                     <label for="type-income">수입</label>
-                    <input type="radio" id="type-asset" name="entry-type" value="asset" onchange="toggleFormType()">
-                    <label for="type-asset">자산관리</label>
                 </div>
 
                 <div class="form-card">
                     <form id="entry-form">
-                        <!-- 지출/수입용 입력 그리드 -->
                         <div class="input-grid" id="standard-input-grid">
                             <input type="date" id="date" class="full-width" required>
                             <input type="text" id="place" placeholder="사용 장소 / 수입처" required>
@@ -323,38 +319,6 @@
                                 </div>
                             </div>
                         </div>
-
-                        <!-- 자산관리 전용 입력 그리드 -->
-                        <div class="input-grid" id="asset-input-grid" style="display: none;">
-                            <input type="date" id="asset-date" class="full-width" required>
-                            <input type="text" id="asset-place" placeholder="투자처 (예: 주식, 적금 등)" required>
-                            <input type="number" id="asset-amount" placeholder="금액 (원)" required>
-                            <input type="text" id="asset-item" placeholder="내역 상세" class="full-width" required>
-
-                            <div class="selection-container full-width" style="margin-bottom:12px;">
-                                <span class="selection-label">은행명 선택</span>
-                                <div class="selection-list" id="bank-list"></div>
-                            </div>
-
-                            <div class="selection-container full-width" style="margin-bottom:12px;">
-                                <span class="selection-label">자산 카테고리</span>
-                                <div class="selection-list" id="asset-category-list"></div>
-                            </div>
-
-                            <div class="fixed-expense-wrapper full-width" style="background:#f8f9fa;">
-                                <input type="checkbox" id="asset-is-repeating" onchange="toggleAssetRepeating()">
-                                <label for="asset-is-repeating">자산 납입 반복 설정</label>
-                            </div>
-
-                            <div class="selection-container full-width" id="asset-repeat-cycle-container" style="display:none; margin-bottom:12px; background:#f8f9fa; padding:12px; border-radius:12px; border:1px solid #eee;">
-                                <span class="selection-label">반복 주기 선택</span>
-                                <select id="asset-repeat-cycle" class="filter-select" style="width:100%;">
-                                    <option value="monthly">매월 반복</option>
-                                    <option value="quarterly">매3개월 (분기) 반복</option>
-                                    <option value="yearly">매년 반복</option>
-                                </select>
-                            </div>
-                        </div>
                         
                         <div class="btn-group">
                             <button type="submit" class="submit-btn" id="submit-btn">내역 추가하기</button>
@@ -377,15 +341,11 @@
                         </div>
                     </div>
                     <div style="font-size: 13px; color: #555; margin-bottom: 6px; display: flex; justify-content: space-between; background: #fff; padding: 7px 10px; border-radius: 6px; border: 1px solid #eee;">
-                        <span>총 자산 투자액</span>
-                        <strong id="dash-asset" style="color: var(--primary);">0원</strong>
-                    </div>
-                    <div style="font-size: 13px; color: #555; margin-bottom: 6px; display: flex; justify-content: space-between; background: #fff; padding: 7px 10px; border-radius: 6px; border: 1px solid #eee;">
                         <span>총 목표 지출</span>
                         <strong id="dash-total-budget" style="color: var(--expense);">0원</strong>
                     </div>
                     <div style="font-size: 13px; color: #555; margin-bottom: 12px; display: flex; justify-content: space-between; background: #fff; padding: 7px 10px; border-radius: 6px; border: 1px solid #eee;">
-                        <span>순 가용 잔액 <span style="font-size:10px; color:#888;">(수입-지출-투자)</span></span>
+                        <span>순 가용 잔액 <span style="font-size:10px; color:#888;">(수입-지출)</span></span>
                         <strong id="dash-available-budget" style="color: var(--primary);">0원</strong>
                     </div>
                     <div class="total-balance">
@@ -398,12 +358,6 @@
                 <div class="stats-card">
                     <h3 class="stats-title">고정 지출 리스트</h3>
                     <div id="dashboard-fixed-expense-list"></div>
-                </div>
-
-                <!-- 자산관리 현황 리스트 카드 -->
-                <div class="stats-card">
-                    <h3 class="stats-title">자산관리 현황</h3>
-                    <div id="dashboard-asset-list"></div>
                 </div>
             </div>
 
@@ -561,7 +515,7 @@
 
 <script>
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzhsPUwzDTaVhGwzeP8DgNNBHi8mPDFcRsq8uaGoLtDisMLRAD2UR5NkITCotg1D0Th7Q/exec";
-    const STORAGE_KEY = 'smart_account_data_v40';
+    const STORAGE_KEY = 'smart_account_data_v41';
 
     let entries = [];
     let expCategories = [
@@ -576,18 +530,9 @@
         { id: 'inc2', name: '부수입', color: '#e67e22' },
         { id: 'inc3', name: '기타수입', color: '#34495e' }
     ];
-    let assetCategories = [
-        { id: 'ast1', name: '주식/ETF', color: '#3498db' },
-        { id: 'ast2', name: '예적금', color: '#2ecc71' }
-    ];
     let payments = [
         { id: 'pay1', name: '신용카드', type: 'card', payDate: 22 },
         { id: 'pay3', name: '카카오페이(현금)', type: 'cash', payDate: null }
-    ];
-    let banks = [
-        { id: 'bank1', name: '신한은행' },
-        { id: 'bank2', name: '국민은행' },
-        { id: 'bank3', name: '저축은행' }
     ];
     let userSettings = { payday: 21 };
     let manualCurrentBudget = null; 
@@ -600,9 +545,7 @@
                 entries = data.entries || [];
                 expCategories = data.expCategories || expCategories;
                 incCategories = data.incCategories || incCategories;
-                assetCategories = data.assetCategories || assetCategories;
                 payments = data.payments || payments;
-                banks = data.banks || banks;
                 userSettings = data.userSettings || userSettings;
                 manualCurrentBudget = data.manualCurrentBudget !== undefined ? data.manualCurrentBudget : null;
                 return;
@@ -618,9 +561,7 @@
                 if(data.entries) entries = data.entries;
                 if(data.expCategories) expCategories = data.expCategories;
                 if(data.incCategories) incCategories = data.incCategories;
-                if(data.assetCategories) assetCategories = data.assetCategories;
                 if(data.payments) payments = data.payments;
-                if(data.banks) banks = data.banks;
                 if(data.userSettings) userSettings = data.userSettings;
                 if(data.manualCurrentBudget !== undefined) manualCurrentBudget = data.manualCurrentBudget;
             } catch (err) {
@@ -630,7 +571,7 @@
     }
 
     async function saveData() {
-        const data = { entries, expCategories, incCategories, assetCategories, payments, banks, userSettings, manualCurrentBudget };
+        const data = { entries, expCategories, incCategories, payments, userSettings, manualCurrentBudget };
         localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
 
         try {
@@ -688,7 +629,7 @@
     }
 
     function exportData() {
-        const data = { entries, expCategories, incCategories, assetCategories, payments, banks, userSettings, manualCurrentBudget };
+        const data = { entries, expCategories, incCategories, payments, userSettings, manualCurrentBudget };
         const dataStr = JSON.stringify(data);
         const blob = new Blob([dataStr], { type: "application/json" });
         const url = URL.createObjectURL(blob);
@@ -712,9 +653,7 @@
                     if (parsed.entries) entries = parsed.entries;
                     if (parsed.expCategories) expCategories = parsed.expCategories;
                     if (parsed.incCategories) incCategories = parsed.incCategories;
-                    if (parsed.assetCategories) assetCategories = parsed.assetCategories;
                     if (parsed.payments) payments = parsed.payments;
-                    if (parsed.banks) banks = parsed.banks;
                     if (parsed.userSettings) userSettings = parsed.userSettings;
                     if (parsed.manualCurrentBudget !== undefined) manualCurrentBudget = parsed.manualCurrentBudget;
                 } else {
@@ -755,7 +694,6 @@
         processRepeatingFixedExpensesForMonth(currentYear, currentMonth);
         const todayStr = getLocalDateString(today);
         document.getElementById('date').value = todayStr;
-        document.getElementById('asset-date').value = todayStr;
         toggleFormType();
         renderSelections(true);
         renderScheduleSettings();
@@ -798,23 +736,8 @@
         }
     }
 
-    function toggleAssetRepeating() {
-        const isChecked = document.getElementById('asset-is-repeating').checked;
-        const cycleContainer = document.getElementById('asset-repeat-cycle-container');
-        if (cycleContainer) cycleContainer.style.display = isChecked ? 'block' : 'none';
-    }
-
     function toggleFormType() {
         const isExpense = document.getElementById('type-expense').checked;
-        const isIncome = document.getElementById('type-income').checked;
-        const isAsset = document.getElementById('type-asset').checked;
-
-        const stdGrid = document.getElementById('standard-input-grid');
-        const assetGrid = document.getElementById('asset-input-grid');
-        
-        if (stdGrid) stdGrid.style.display = isAsset ? 'none' : 'grid';
-        if (assetGrid) assetGrid.style.display = isAsset ? 'grid' : 'none';
-
         const installmentWrapper = document.getElementById('installment-toggle-wrapper');
         const installmentMonthsContainer = document.getElementById('installment-months-container');
         const fixedContainer = document.getElementById('fixed-expense-container');
@@ -831,11 +754,7 @@
             if (fixedOptionsContainer) fixedOptionsContainer.style.display = 'none';
         }
 
-        if (isAsset) {
-            renderAssetSelections();
-        } else {
-            renderSelections(isExpense);
-        }
+        renderSelections(isExpense);
     }
 
     function renderSelections(isExpense) {
@@ -876,43 +795,6 @@
         updateStyles();
     }
 
-    function renderAssetSelections() {
-        const catList = document.getElementById('asset-category-list');
-        if (catList) {
-            catList.innerHTML = '';
-            assetCategories.forEach((cat, idx) => {
-                catList.innerHTML += `
-                    <div class="selection-item">
-                        <input type="radio" id="ast_cat_${cat.id}" name="asset-category" value="${cat.id}" ${idx === 0 ? 'checked' : ''}>
-                        <label for="ast_cat_${cat.id}" onclick="setTimeout(updateAssetStyles, 10)">${cat.name}</label>
-                    </div>`;
-            });
-            catList.innerHTML += `
-                <div class="action-btns-wrapper">
-                    <button type="button" class="action-btn-small" onclick="addAssetCategory()">+ 추가</button>
-                    <button type="button" class="action-btn-small del-btn-small" onclick="deleteAssetCategory()">- 삭제</button>
-                </div>`;
-        }
-
-        const bankList = document.getElementById('bank-list');
-        if (bankList) {
-            bankList.innerHTML = '';
-            banks.forEach((bank, idx) => {
-                bankList.innerHTML += `
-                    <div class="selection-item">
-                        <input type="radio" id="bank_${bank.id}" name="bank" value="${bank.id}" ${idx === 0 ? 'checked' : ''}>
-                        <label for="bank_${bank.id}" onclick="setTimeout(updateAssetStyles, 10)">${bank.name}</label>
-                    </div>`;
-            });
-            bankList.innerHTML += `
-                <div class="action-btns-wrapper">
-                    <button type="button" class="action-btn-small" onclick="addBank()">+ 추가</button>
-                    <button type="button" class="action-btn-small del-btn-small" onclick="deleteBank()">- 삭제</button>
-                </div>`;
-        }
-        updateAssetStyles();
-    }
-
     function updateStyles() {
         document.querySelectorAll('input[name="category"]').forEach(radio => {
             const label = document.querySelector(`label[for="${radio.id}"]`);
@@ -930,22 +812,8 @@
         }
     }
 
-    function updateAssetStyles() {
-        document.querySelectorAll('input[name="asset-category"]').forEach(radio => {
-            const label = document.querySelector(`label[for="${radio.id}"]`);
-            const cat = assetCategories.find(c => c.id === radio.value);
-            if (radio.checked && cat) { label.style.background = cat.color; label.style.color = '#fff'; label.style.borderColor = cat.color; } 
-            else { label.style.background = '#f8f9fa'; label.style.color = '#555'; label.style.borderColor = 'var(--border)'; }
-        });
-        document.querySelectorAll('input[name="bank"]').forEach(radio => {
-            const label = document.querySelector(`label[for="${radio.id}"]`);
-            if (radio.checked) { label.style.background = '#34495e'; label.style.color = '#fff'; label.style.borderColor = '#34495e'; } 
-            else { label.style.background = '#f8f9fa'; label.style.color = '#555'; label.style.borderColor = 'var(--border)'; }
-        });
-    }
-
     function getUniqueColor() {
-        const existingColors = new Set([...expCategories, ...incCategories, ...assetCategories].map(c => c.color));
+        const existingColors = new Set([...expCategories, ...incCategories].map(c => c.color));
         for (let color of colorPalette) {
             if (!existingColors.has(color)) return color;
         }
@@ -979,46 +847,6 @@
             else { incCategories = incCategories.filter(c => c.id !== catId); }
             saveData();
             renderSelections(isExpense); renderCategoryBudgetSettings(); updateUI();
-        }
-    }
-
-    function addAssetCategory() {
-        const name = prompt("새로운 자산 카테고리 이름을 입력하세요:");
-        if (name && name.trim()) {
-            assetCategories.push({ id: 'ast' + Date.now(), name: name.trim(), color: getUniqueColor() });
-            saveData();
-            renderAssetSelections();
-        }
-    }
-
-    function deleteAssetCategory() {
-        const selected = document.querySelector('input[name="asset-category"]:checked');
-        if (!selected) return;
-        if (assetCategories.length <= 1) return alert("최소 1개의 카테고리가 필요합니다.");
-        if (confirm("이 자산 카테고리를 삭제하시겠습니까?")) {
-            assetCategories = assetCategories.filter(c => c.id !== selected.value);
-            saveData();
-            renderAssetSelections();
-        }
-    }
-
-    function addBank() {
-        const name = prompt("은행명을 입력하세요 (예: 토스뱅크):");
-        if (name && name.trim()) {
-            banks.push({ id: 'bank' + Date.now(), name: name.trim() });
-            saveData();
-            renderAssetSelections();
-        }
-    }
-
-    function deleteBank() {
-        const selected = document.querySelector('input[name="bank"]:checked');
-        if (!selected) return;
-        if (banks.length <= 1) return alert("최소 1개의 은행은 필요합니다.");
-        if (confirm("이 은행명을 삭제하시겠습니까?")) {
-            banks = banks.filter(b => b.id !== selected.value);
-            saveData();
-            renderAssetSelections();
         }
     }
 
@@ -1145,7 +973,7 @@
 
     function editCurrentBudget() {
         let totals = calculateSelectedMonthTotals();
-        let defaultBudget = totals.income - totals.expense - totals.asset;
+        let defaultBudget = totals.income - totals.expense;
         let displayVal = manualCurrentBudget !== null ? manualCurrentBudget : defaultBudget;
         const val = prompt(`수정할 '현재 예산'을 입력하세요 (숫자만).\n\n※ 빈칸으로 두고 확인을 누르면 다시 자동계산으로 돌아갑니다.`, displayVal);
         if(val === null) return; 
@@ -1155,59 +983,10 @@
         updateDashboardStats();
     }
 
-    // 💡 [완벽 해결] 추가 및 수정(수정내용 저장 버튼 정상 작동) 처리 핸들러
+    // 💡 [완벽 복구] 지출/수입 등록 및 수정(수정내용 저장) 핸들러
     document.getElementById('entry-form').addEventListener('submit', function(e) {
         e.preventDefault();
         
-        const isAsset = document.getElementById('type-asset')?.checked;
-
-        // 1️⃣ [자산관리] 등록 및 수정 처리
-        if (isAsset) {
-            const startDateVal = document.getElementById('asset-date').value;
-            if (!startDateVal) return alert("날짜를 선택해주세요.");
-            const baseDate = new Date(startDateVal);
-
-            const totalAmount = parseInt(document.getElementById('asset-amount').value);
-            if (isNaN(totalAmount) || totalAmount <= 0) return alert("올바른 금액을 입력하세요.");
-
-            const place = document.getElementById('asset-place').value;
-            const item = document.getElementById('asset-item').value;
-            const categoryId = document.querySelector('input[name="asset-category"]:checked')?.value || assetCategories[0].id;
-            const bankId = document.querySelector('input[name="bank"]:checked')?.value || banks[0].id;
-            const isRepeating = document.getElementById('asset-is-repeating').checked;
-            const repeatCycle = document.getElementById('asset-repeat-cycle').value;
-
-            const entryData = {
-                id: editingId || ('asset_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5)),
-                type: 'asset',
-                date: startDateVal,
-                categoryId: categoryId,
-                paymentId: bankId,
-                place: place,
-                item: item,
-                amount: totalAmount,
-                isFixed: false,
-                isRepeating: isRepeating,
-                repeatCycle: repeatCycle
-            };
-
-            if (editingId) {
-                const index = entries.findIndex(ent => String(ent.id) === String(editingId));
-                if (index !== -1) entries[index] = entryData;
-            } else {
-                entries.unshift(entryData);
-            }
-
-            saveData();
-            cancelEdit();
-            currentYear = baseDate.getFullYear();
-            currentMonth = baseDate.getMonth();
-            selectDate(startDateVal);
-            updateUI();
-            return;
-        }
-
-        // 2️⃣ [지출 / 수입] 등록 및 수정 처리
         const startDateVal = document.getElementById('date').value;
         if (!startDateVal) return alert("날짜를 선택해주세요.");
         const baseDate = new Date(startDateVal);
@@ -1303,7 +1082,7 @@
                         entries = entries.filter(e => String(e.id) !== String(editingId));
                     }
                 } else {
-                    // 💡 [핵심 해결] 일반 단건 수정 데이터 정확히 덮어쓰기 및 반영
+                    // 💡 [핵심] 일반 단건 수정 데이터 정확히 반영
                     const index = entries.findIndex(e => String(e.id) === String(editingId));
                     if (index !== -1) {
                         entries[index] = {
@@ -1368,14 +1147,9 @@
         document.getElementById('place').value = '';
         document.getElementById('amount').value = '';
         document.getElementById('item').value = '';
-        document.getElementById('asset-place').value = '';
-        document.getElementById('asset-amount').value = '';
-        document.getElementById('asset-item').value = '';
         document.getElementById('is-fixed').checked = false;
         document.getElementById('is-repeating').checked = false;
-        document.getElementById('asset-is-repeating').checked = false;
         document.getElementById('fixed-options-container').style.display = 'none';
-        document.getElementById('asset-repeat-cycle-container').style.display = 'none';
         
         if(document.getElementById('is-installment')) {
             document.getElementById('is-installment').checked = false;
@@ -1420,52 +1194,33 @@
         if (!ent) return;
         editingId = id;
         
-        if (ent.type === 'asset') {
-            document.getElementById('type-asset').checked = true;
-            toggleFormType();
-            document.getElementById('asset-date').value = ent.date;
-            document.getElementById('asset-place').value = ent.place;
-            document.getElementById('asset-amount').value = ent.amount;
-            document.getElementById('asset-item').value = ent.item;
-            setTimeout(() => {
-                const catEl = document.getElementById('ast_cat_' + ent.categoryId); if(catEl) catEl.checked = true;
-                const bankEl = document.getElementById('bank_' + ent.paymentId); if(bankEl) bankEl.checked = true;
-                document.getElementById('asset-is-repeating').checked = ent.isRepeating || false;
-                if(ent.isRepeating) {
-                    document.getElementById('asset-repeat-cycle-container').style.display = 'block';
-                    document.getElementById('asset-repeat-cycle').value = ent.repeatCycle || 'monthly';
-                }
-                updateAssetStyles();
-            }, 50);
+        if (ent.type === 'expense') {
+            document.getElementById('type-expense').checked = true;
         } else {
-            if (ent.type === 'expense') {
-                document.getElementById('type-expense').checked = true;
-            } else {
-                document.getElementById('type-income').checked = true;
-            }
-            toggleFormType();
-
-            // 💡 [핵심 해결] 수정 모드 진입 시 기존 항목의 날짜와 상세 데이터가 올바르게 세팅되도록 보완
-            setTimeout(() => {
-                document.getElementById('date').value = ent.date; 
-                document.getElementById('place').value = ent.place; 
-                document.getElementById('amount').value = ent.amount; 
-                
-                let cleanItem = ent.item.replace(/\s\(\d+\/\d+회차\)/, '');
-                document.getElementById('item').value = cleanItem;
-
-                const catEl = document.getElementById(ent.categoryId); if(catEl) catEl.checked = true;
-                if(ent.type === 'expense') {
-                    const payEl = document.getElementById(ent.paymentId); if(payEl) payEl.checked = true;
-                    document.getElementById('is-fixed').checked = ent.isFixed;
-                    if(ent.isFixed) {
-                        document.getElementById('fixed-options-container').style.display = 'block';
-                        document.getElementById('is-repeating').checked = ent.isRepeating || false;
-                    }
-                }
-                updateStyles();
-            }, 50);
+            document.getElementById('type-income').checked = true;
         }
+        toggleFormType();
+
+        // 💡 수정 모드 진입 시 데이터 완벽 세팅
+        setTimeout(() => {
+            document.getElementById('date').value = ent.date; 
+            document.getElementById('place').value = ent.place; 
+            document.getElementById('amount').value = ent.amount; 
+            
+            let cleanItem = ent.item.replace(/\s\(\d+\/\d+회차\)/, '');
+            document.getElementById('item').value = cleanItem;
+
+            const catEl = document.getElementById(ent.categoryId); if(catEl) catEl.checked = true;
+            if(ent.type === 'expense') {
+                const payEl = document.getElementById(ent.paymentId); if(payEl) payEl.checked = true;
+                document.getElementById('is-fixed').checked = ent.isFixed;
+                if(ent.isFixed) {
+                    document.getElementById('fixed-options-container').style.display = 'block';
+                    document.getElementById('is-repeating').checked = ent.isRepeating || false;
+                }
+            }
+            updateStyles();
+        }, 50);
 
         document.getElementById('submit-btn').innerText = '수정 내용 저장'; 
         document.getElementById('cancel-edit-btn').style.display = 'block'; 
@@ -1479,11 +1234,9 @@
         document.getElementById('cancel-edit-btn').style.display = 'none';
         if(document.getElementById('installment-months-container')) document.getElementById('installment-months-container').style.display = 'none';
         if(document.getElementById('fixed-options-container')) document.getElementById('fixed-options-container').style.display = 'none';
-        if(document.getElementById('asset-repeat-cycle-container')) document.getElementById('asset-repeat-cycle-container').style.display = 'none';
         
         const todayStr = getLocalDateString(today);
         document.getElementById('date').value = todayStr;
-        document.getElementById('asset-date').value = todayStr;
         toggleFormType();
     }
     
@@ -1494,7 +1247,6 @@
         updateDashboardBudgets(); 
         renderAnalytics(); 
         renderFixedExpenses();
-        renderDashboardAssetList();
     }
 
     function changeMonth(offset) {
@@ -1508,7 +1260,6 @@
         updateDashboardStats();
         updateDashboardBudgets();
         renderFixedExpenses();
-        renderDashboardAssetList();
         renderAnalytics();
     }
 
@@ -1539,7 +1290,7 @@
             const dStr = String(day).padStart(2, '0');
             const dateStr = `${currentYear}-${mStr}-${dStr}`;
             
-            const dayEntries = entries.filter(e => e.date === dateStr && e.type !== 'asset');
+            const dayEntries = entries.filter(e => e.date === dateStr);
             const isToday = dateStr === todayStr;
             const isSelected = dateStr === selectedDateStr;
 
@@ -1603,21 +1354,18 @@
 
     function selectDate(dateStr) {
         selectedDateStr = dateStr; 
-        
         const dateEl = document.getElementById('date');
         if (dateEl) dateEl.value = dateStr;
-        const assetDateEl = document.getElementById('asset-date');
-        if (assetDateEl) assetDateEl.value = dateStr;
         
         renderCalendar(); 
         const listEl = document.getElementById('daily-entry-list');
         document.getElementById('daily-detail-title').innerText = `${parseInt(dateStr.split('-')[1])}월 ${parseInt(dateStr.split('-')[2])}일 상세 내역`;
         
         listEl.innerHTML = '';
-        const dayEntries = entries.filter(e => e.date === dateStr && e.type !== 'asset');
+        const dayEntries = entries.filter(e => e.date === dateStr);
         
         if (dayEntries.length === 0) {
-            listEl.innerHTML = '<li class="empty-state">해당 일자에 입력된 지출/수입 내역이 없습니다.</li>';
+            listEl.innerHTML = '<li class="empty-state">해당 일자에 입력된 내역이 없습니다.</li>';
         } else {
             dayEntries.forEach(ent => {
                 const cat = ent.type === 'expense' ? expCategories.find(c => c.id === ent.categoryId) : incCategories.find(c => c.id === ent.categoryId);
@@ -1656,7 +1404,7 @@
 
     function calculateSelectedMonthTotals() {
         const selMonth = currentMonth + 1, selYear = currentYear;
-        let totalInc = 0, totalExp = 0, totalAsset = 0;
+        let totalInc = 0, totalExp = 0;
         
         entries.forEach(ent => {
             const d = new Date(ent.date);
@@ -1666,10 +1414,9 @@
             if (eMonth === selMonth && eYear === selYear) {
                 if (ent.type === 'income') totalInc += ent.amount;
                 if (ent.type === 'expense') totalExp += ent.amount;
-                if (ent.type === 'asset') totalAsset += ent.amount;
             }
         });
-        return { income: totalInc, expense: totalExp, asset: totalAsset };
+        return { income: totalInc, expense: totalExp };
     }
 
     function updateDashboardStats() {
@@ -1677,24 +1424,55 @@
         let totals = calculateSelectedMonthTotals();
         document.getElementById('dash-income').textContent = totals.income.toLocaleString();
         document.getElementById('dash-expense').textContent = totals.expense.toLocaleString();
-        
-        const assetEl = document.getElementById('dash-asset');
-        if (assetEl) assetEl.textContent = `${totals.asset.toLocaleString()}원`;
 
         let totalTargetBudget = 0;
         expCategories.forEach(c => totalTargetBudget += (c.budget || 0));
         document.getElementById('dash-total-budget').textContent = `${totalTargetBudget.toLocaleString()}원`;
 
-        let availableBudget = totals.income - totals.expense - totals.asset;
+        let availableBudget = totals.income - totals.expense;
         const availEl = document.getElementById('dash-available-budget');
         availEl.textContent = `${availableBudget.toLocaleString()}원`;
         availEl.style.color = availableBudget < 0 ? 'var(--expense)' : 'var(--primary)';
 
-        let defaultBudget = totals.income - totals.expense - totals.asset;
+        let defaultBudget = totals.income - totals.expense;
         let displayBudget = manualCurrentBudget !== null ? manualCurrentBudget : defaultBudget;
         
         document.getElementById('dash-balance').textContent = displayBudget.toLocaleString();
         document.getElementById('dash-balance').style.color = displayBudget < 0 ? 'var(--expense)' : 'var(--primary)';
+    }
+
+    function renderFixedExpenses() {
+        const list = document.getElementById('dashboard-fixed-expense-list'); 
+        if(!list) return;
+        list.innerHTML = '';
+        const curMonth = currentMonth + 1;
+        const curYear = currentYear;
+        
+        const fixedEntries = entries.filter(e => {
+            if (e.type !== 'expense' || !e.isFixed) return false;
+            const d = new Date(e.date);
+            return d.getFullYear() === curYear && (d.getMonth() + 1) === curMonth;
+        });
+        
+        if(fixedEntries.length === 0) return list.innerHTML = '<div class="empty-state" style="padding:15px 0;">이번 달 고정 지출 내역이 없습니다.</div>';
+
+        let totalFixed = 0;
+        fixedEntries.forEach(ent => {
+            totalFixed += ent.amount;
+            const cat = expCategories.find(c => c.id === ent.categoryId);
+            const catBadge = cat ? `<span class="badge" style="background-color: ${cat.color}">${cat.name}</span>` : '';
+            
+            list.innerHTML += `
+                <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid #eee; font-size:13px;">
+                    <div>
+                        <div style="margin-bottom:3px;">${catBadge}</div>
+                        <strong style="color:#333; display:block;">${ent.place}</strong>
+                        <span style="font-size:11px; color:#888;">${ent.date} · ${ent.item}</span>
+                    </div>
+                    <strong style="color:var(--expense)">-${ent.amount.toLocaleString()}원</strong>
+                </div>`;
+        });
+        list.innerHTML += `<div style="text-align:right; margin-top:12px; font-weight:700; font-size:14px;">고정비 합계: <span style="color:var(--expense)">${totalFixed.toLocaleString()}원</span></div>`;
     }
 </script>
 
