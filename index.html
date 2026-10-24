@@ -1041,7 +1041,6 @@ document.getElementById('entry-form').addEventListener('submit', function(e) {
         
         const baseDate = new Date(startDateVal);
 
-        // 💡 카테고리와 결제수단 선택값 안전하게 가져오기 (체크된 게 없으면 기본 첫 번째 선택)
         const checkedCategory = document.querySelector('input[name="category"]:checked');
         const categoryId = checkedCategory ? checkedCategory.value : (type === 'expense' ? expCategories[0]?.id : incCategories[0]?.id);
         
@@ -1075,6 +1074,7 @@ document.getElementById('entry-form').addEventListener('submit', function(e) {
                         e.paymentId = paymentId;
                     }
                 });
+                cancelEdit();
             } else if (updateAllFuture && originalEntry && originalEntry.groupId) {
                 // 기존 할부 그룹 전체 수정 (원금 기준 재분할)
                 entries = entries.filter(e => e.groupId !== originalEntry.groupId);
@@ -1110,14 +1110,32 @@ document.getElementById('entry-form').addEventListener('submit', function(e) {
                     };
                     entries.unshift(entryData);
                 }
+                cancelEdit();
             } else {
-                // 단건 수정이거나 일시불 -> 할부로 전환하는 경우
-                entries = entries.filter(e => String(e.id) !== String(editingId));
+                // 💡 단건 수정이거나, 일시불 내역을 수정하면서 '할부'로 새로 전환하는 경우
+                if (isInstallment) {
+                    // 기존 일시불 데이터 삭제 후 아래에서 할부 생성 로직 타도록 함
+                    if (originalEntry && originalEntry.groupId) {
+                        entries = entries.filter(e => e.groupId !== originalEntry.groupId);
+                    } else {
+                        entries = entries.filter(e => String(e.id) !== String(editingId));
+                    }
+                } else {
+                    // 일반 단건 수정 (할부 미선택 유지): 기존 데이터 직접 갱신
+                    const index = entries.findIndex(e => String(e.id) === String(editingId));
+                    if (index !== -1) {
+                        entries[index] = {
+                            ...entries[index],
+                            type, date: startDateVal, categoryId, paymentId, place, item, amount: totalAmount, isFixed, isRepeating, groupId: null
+                        };
+                    }
+                    cancelEdit();
+                }
             }
         }
 
-        // 수정 모드가 아니거나, 일시불/단건에서 할부로 새로 전환되어 기존 대상이 제거된 경우 실행
-        if (!editingId || (editingId && !entries.some(e => String(e.id) === String(editingId)))) {
+        // 💡 신규 등록이거나, 일시불/단건에서 할부로 새로 전환되어 기존 데이터가 제거된 경우 실행
+        if (!editingId || (editingId && isInstallment)) {
             const splitAmount = Math.floor(totalAmount / months);
             const remainder = totalAmount % months; 
             const newGroupId = isInstallment ? 'group_' + Date.now() : null;
@@ -1149,6 +1167,7 @@ document.getElementById('entry-form').addEventListener('submit', function(e) {
                 };
                 entries.unshift(entryData);
             }
+            cancelEdit();
         }
 
         saveData();
