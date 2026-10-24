@@ -366,6 +366,7 @@
                 </div>
 
                 <!-- 이번 달 요약 카드 -->
+       <!-- 이번 달 요약 카드 -->
                 <div class="stats-card">
                     <h3 class="stats-title" id="current-month-title">이번 달 요약</h3>
                     <div class="summary-grid-2">
@@ -386,7 +387,7 @@
                         <span>총 목표 지출</span>
                         <strong id="dash-total-budget" style="color: var(--expense);">0원</strong>
                     </div>
-                    <div style="font-size: 13px; color: #555; margin-bottom: 6px; display: flex; justify-content: space-between; background: #fff; padding: 7px 10px; border-radius: 6px; border: 1px solid #eee;">
+                    <div style="font-size: 13px; color: #555; margin-bottom: 12px; display: flex; justify-content: space-between; background: #fff; padding: 7px 10px; border-radius: 6px; border: 1px solid #eee;">
                         <span>순 가용 잔액 <span style="font-size:10px; color:#888;">(수입-지출-투자)</span></span>
                         <strong id="dash-available-budget" style="color: var(--primary);">0원</strong>
                     </div>
@@ -395,7 +396,7 @@
                         <div class="balance-val"><span id="dash-balance">0</span>원</div>
                     </div>
                 </div>
-
+                
                 <!-- 고정 지출 리스트 -->
                 <div class="stats-card">
                     <h3 class="stats-title">고정 지출 리스트</h3>
@@ -1144,7 +1145,7 @@
         }
     }
 
-    function editCurrentBudget() {
+ function editCurrentBudget() {
         let totals = calculateSelectedMonthTotals();
         let defaultBudget = totals.income - totals.expense - totals.asset;
         let displayVal = manualCurrentBudget !== null ? manualCurrentBudget : defaultBudget;
@@ -1618,7 +1619,7 @@
         return { income: totalInc, expense: totalExp, asset: totalAsset };
     }
 
-    function updateDashboardStats() {
+ function updateDashboardStats() {
         document.getElementById('current-month-title').innerText = `${currentMonth + 1}월 요약`;
         let totals = calculateSelectedMonthTotals();
         document.getElementById('dash-income').textContent = totals.income.toLocaleString();
@@ -1631,7 +1632,7 @@
         expCategories.forEach(c => totalTargetBudget += (c.budget || 0));
         document.getElementById('dash-total-budget').textContent = `${totalTargetBudget.toLocaleString()}원`;
 
-        // 순 가용 잔액: 총 수입 - 총 지출 - 총 자산 투자
+        // 순 가용 잔액: 총 수입 - 총 지출 - 총 자산 투자액
         let availableBudget = totals.income - totals.expense - totals.asset;
         const availEl = document.getElementById('dash-available-budget');
         availEl.textContent = `${availableBudget.toLocaleString()}원`;
@@ -1643,7 +1644,7 @@
         document.getElementById('dash-balance').textContent = displayBudget.toLocaleString();
         document.getElementById('dash-balance').style.color = displayBudget < 0 ? 'var(--expense)' : 'var(--primary)';
     }
-
+    
     function updateDashboardBudgets() {
         const budgetContainer = document.getElementById('dashboard-budget-container'); 
         budgetContainer.innerHTML = '';
