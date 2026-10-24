@@ -646,19 +646,28 @@
         const reader = new FileReader();
         reader.onload = function(e) {
             try {
-                const data = JSON.parse(e.target.result);
-                if(data.entries) entries = data.entries;
-                if(data.expCategories) expCategories = data.expCategories;
-                if(data.incCategories) incCategories = data.incCategories;
-                if(data.payments) payments = data.payments;
-                if(data.userSettings) userSettings = data.userSettings;
-                if(data.manualCurrentBudget !== undefined) manualCurrentBudget = data.manualCurrentBudget;
+                const parsed = JSON.parse(e.target.result);
+                
+                // 💡 구버전(배열 형태)과 신버전(객체 형태) 모두 호환되도록 처리
+                if (Array.isArray(parsed)) {
+                    entries = parsed; // 구버전 배열 데이터 반영
+                } else if (parsed && typeof parsed === 'object') {
+                    if (parsed.entries) entries = parsed.entries;
+                    if (parsed.expCategories) expCategories = parsed.expCategories;
+                    if (parsed.incCategories) incCategories = parsed.incCategories;
+                    if (parsed.payments) payments = parsed.payments;
+                    if (parsed.userSettings) userSettings = parsed.userSettings;
+                    if (parsed.manualCurrentBudget !== undefined) manualCurrentBudget = parsed.manualCurrentBudget;
+                } else {
+                    throw new Error("Invalid format");
+                }
                 
                 saveData();
                 alert("데이터가 성공적으로 복구되었습니다!");
                 location.reload();
             } catch (err) {
-                alert("파일 형식이 올바르지 않습니다.");
+                console.error(err);
+                alert("파일 형식이 올바르지 않거나 손상된 백업 파일입니다.");
             }
         };
         reader.readAsText(file);
