@@ -79,12 +79,27 @@
         .dashboard-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; }
         @media (max-width: 850px) { .dashboard-grid { grid-template-columns: 1fr; } }
 
+        /* 좌측 패널 (입력폼 + 요약 + 카드들) */
+        .left-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
         /* 폼 영역 */
-        .type-toggle { display: flex; gap: 10px; margin-bottom: 20px; }
-        .type-toggle label { flex: 1; text-align: center; padding: 12px; border-radius: 12px; background: #f8f9fa; border: 2px solid transparent; font-weight: 700; cursor: pointer; transition: 0.2s; color: #aaa; }
+        .type-toggle { display: flex; gap: 8px; margin-bottom: 0; }
+        .type-toggle label { flex: 1; text-align: center; padding: 12px 4px; border-radius: 12px; background: #f8f9fa; border: 2px solid transparent; font-weight: 700; cursor: pointer; transition: 0.2s; color: #aaa; font-size: 14px; }
         .type-toggle input[type="radio"] { display: none; }
         #type-expense:checked + label { background: #ffeaea; color: var(--expense); border-color: var(--expense); }
         #type-income:checked + label { background: #e9f7ef; color: var(--income); border-color: var(--income); }
+        #type-asset:checked + label { background: #e8f4fd; color: var(--primary); border-color: var(--primary); }
+
+        .form-card {
+            background: #fff;
+            border: 1px solid #eee;
+            border-radius: 16px;
+            padding: 20px;
+        }
 
         .selection-container { margin-bottom: 20px; }
         .selection-label { display: block; margin-bottom: 8px; font-size: 14px; font-weight: 600; color: #555; }
@@ -116,7 +131,7 @@
         .cancel-edit-btn { background-color: #95a5a6; color: white; border: none; font-weight: 600; cursor: pointer; padding: 16px; border-radius: 12px; font-size: 16px; display: none; }
 
         /* 월간 달력 스타일 */
-        .calendar-wrapper { margin-top: 32px; border: 1px solid #eee; border-radius: 16px; padding: 20px; background: #fff; }
+        .calendar-wrapper { margin-top: 0 !important; border: none; padding: 0; background: transparent; }
         .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
         .cal-nav-btn { background: #f0f0f0; border: none; padding: 6px 12px; border-radius: 8px; cursor: pointer; font-weight: bold; }
         .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
@@ -136,8 +151,30 @@
         .cal-summary-exp { color: var(--expense); background: #fff5f5; padding: 1px 3px; border-radius: 4px; display: inline-block; }
         .cal-summary-net { color: #444; font-size: 9px; margin-right: 2px; }
 
+        /* 우측 패널 레이아웃 */
+        .right-calendar-pane {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .calendar-and-details-block {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            background: #fff;
+            border: 1px solid #eee;
+            border-radius: 16px;
+            padding: 20px;
+        }
+        .stats-cards-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+            align-items: start;
+        }
+
         /* 일별 상세 내역 */
-        .daily-detail-section { margin-top: 16px; padding: 16px; background: #f8f9fa; border-radius: 12px; border: 1px solid #eee; display: none; }
+        .daily-detail-section { margin-top: 0; padding: 16px; background: #f8f9fa; border-radius: 12px; border: 1px solid #eee; display: none; }
         .daily-detail-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
         .close-btn { background: none; border: 1px solid #ccc; padding: 4px 8px; border-radius: 6px; cursor: pointer; font-size: 12px;}
         .expense-list { list-style: none; padding: 0; margin: 0; max-height: 250px; overflow-y: auto; }
@@ -145,6 +182,8 @@
         .item-badges { display: flex; gap: 4px; margin-bottom: 4px; }
         .badge { font-size: 10px; color: white; padding: 2px 6px; border-radius: 6px; font-weight: 600; }
         .badge-fixed { background-color: #95a5a6; }
+        .badge-installment { background-color: #e67e22; }
+        .badge-asset { background-color: var(--primary); }
         .item-main-text { font-size: 14px; font-weight: 600; color: #333; margin-bottom: 2px; }
         .item-sub-text { font-size: 12px; color: #666; }
         .item-actions { display: flex; gap: 6px; justify-content: flex-end; margin-top: 6px; }
@@ -153,13 +192,14 @@
         .delete-btn { color: var(--expense); background: #ffeaea; }
         .amount-exp { font-size: 15px; font-weight: 700; color: var(--expense); display: block; text-align: right; }
         .amount-inc { font-size: 15px; font-weight: 700; color: var(--income); display: block; text-align: right; }
+        .amount-asset { font-size: 15px; font-weight: 700; color: var(--primary); display: block; text-align: right; }
         .empty-state { text-align: center; color: var(--text-sub); padding: 20px 0; font-size: 13px; }
 
         /* 통계 섹션 (요약) */
-        .stats-card { background: #f8f9fa; padding: 24px; border-radius: 16px; margin-bottom: 20px; border: 1px solid #eee; }
+        .stats-card { background: #f8f9fa; padding: 24px; border-radius: 16px; margin-bottom: 0; border: 1px solid #eee; }
         .stats-title { margin-top: 0; font-size: 16px; margin-bottom: 16px; font-weight: 700; color: #2c3e50; }
         
-        .summary-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 12px; }
+        .summary-grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 12px; }
         .summary-box { text-align: center; padding: 12px 8px; border-radius: 12px; background: white; border: 1px solid #eee; }
         .summary-label { font-size: 12px; color: #888; margin-bottom: 6px; }
         .summary-val { font-size: 15px; font-weight: 700; }
@@ -195,7 +235,6 @@
 
         .schedule-item { display: flex; justify-content: space-between; align-items: center; padding: 14px; background: white; border-radius: 12px; margin-bottom: 10px; border: 1px solid var(--border); }
         
-        /* 백업/복구 UI */
         .backup-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
         .backup-btn { background: #34495e; color: white; border: none; padding: 14px; border-radius: 12px; font-weight: 600; cursor: pointer; width: 100%; }
         .restore-btn { background: #f39c12; color: white; border: none; padding: 14px; border-radius: 12px; font-weight: 600; cursor: pointer; width: 100%; }
@@ -211,58 +250,6 @@
         .modal-btn { flex: 1; padding: 12px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; }
         .modal-btn-confirm { background: var(--primary); color: white; }
         .modal-btn-cancel { background: #ccc; color: #333; }
-
-/* 💡 입력폼 왼쪽 / 달력 오른쪽 레이아웃 스타일 */
-    .calendar-wrapper { margin-top: 0 !important; }
-    
-/* 💡 우측 패널 최적화 레이아웃 */
-    .right-calendar-pane {
-        display: flex;
-        flex-direction: column;
-        gap: 20px;
-    }
-
-    /* 달력과 상세내역을 감싸는 블록 */
-    .calendar-and-details-block {
-        display: flex;
-        flex-direction: column;
-        gap: 16px;
-        background: #fff;
-        border: 1px solid #eee;
-        border-radius: 16px;
-        padding: 20px;
-    }
-
-    /* 하단 통계 및 카드들을 2열(2단) 그리드로 분산 배치 */
-    .stats-cards-grid {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 16px;
-        align-items: start;
-    }
-
-    /* 요약 카드는 너비를 2칸 꽉 채우도록 설정 */
-    .stats-card-full {
-        grid-column: span 2;
-    }
-
-    @media (max-width: 1100px) {
-        .stats-cards-grid { grid-template-columns: 1fr; }
-        .stats-card-full { grid-column: span 1; }
-    }
-
-    /* 달력 바로 아래에 뜨는 일별 상세 내역 스타일 */
-    .daily-detail-section { 
-        margin-top: 0; 
-        padding: 16px; 
-        background: #f8f9fa; 
-        border-radius: 12px; 
-        border: 1px solid #eee; 
-        display: none; 
-    }
-
-        /* 💡 자산관리 토글 버튼 스타일 추가 */
-    #type-asset:checked + label { background: #e8f4fd; color: var(--primary); border-color: var(--primary); }
     </style>
 </head>
 <body>
@@ -276,10 +263,10 @@
         <button class="tab-btn" onclick="switchTab('schedule')">일정 및 설정</button>
     </div>
 
-<!-- 1. 대시보드 탭 -->
+    <!-- 1. 대시보드 탭 -->
     <div id="dashboard-section" class="section-content active-section">
         <div class="dashboard-grid">
-<!-- 왼쪽: 입력 폼 영역 (지출/수입/자산관리 통합) -->
+            <!-- 왼쪽: 입력 폼 영역 + 요약 + 고정지출 + 자산관리 리스트 -->
             <div class="left-panel">
                 <div class="type-toggle">
                     <input type="radio" id="type-expense" name="entry-type" value="expense" checked onchange="toggleFormType()">
@@ -292,14 +279,13 @@
 
                 <div class="form-card">
                     <form id="entry-form">
-                        <!-- 💡 지출/수입용 입력 그리드 -->
+                        <!-- 지출/수입용 입력 그리드 -->
                         <div class="input-grid" id="standard-input-grid">
                             <input type="date" id="date" class="full-width" required>
                             <input type="text" id="place" placeholder="사용 장소 / 수입처" required>
                             <input type="number" id="amount" placeholder="금액 (원)" required>
                             <input type="text" id="item" placeholder="품목 / 내역 상세" class="full-width" required>
                             
-                            <!-- 할부 여부 체크박스 및 할부 개월 수 설정 -->
                             <div class="fixed-expense-wrapper full-width" id="installment-toggle-wrapper" style="background:#f8f9fa;">
                                 <input type="checkbox" id="is-installment" onchange="toggleInstallment()">
                                 <label for="is-installment">할부 거래입니까?</label>
@@ -317,19 +303,16 @@
                                 </select>
                             </div>
 
-                            <!-- 카테고리 -->
                             <div class="selection-container full-width" id="category-container" style="margin-bottom:12px;">
                                 <span class="selection-label">카테고리</span>
                                 <div class="selection-list" id="category-list"></div>
                             </div>
 
-                            <!-- 결제 수단 -->
                             <div class="selection-container full-width" id="payment-container" style="margin-bottom:12px;">
                                 <span class="selection-label">결제 수단</span>
                                 <div class="selection-list" id="payment-list"></div>
                             </div>
 
-                            <!-- 고정비 및 반복 설정 -->
                             <div class="fixed-expense-wrapper" id="fixed-expense-container">
                                 <input type="checkbox" id="is-fixed" onchange="toggleFixedOptions()">
                                 <label for="is-fixed">고정비로 설정</label>
@@ -343,26 +326,23 @@
                             </div>
                         </div>
 
-                        <!-- 💡 자산관리 전용 입력 그리드 (투자처 / 금액 / 내용 / 은행명 / 카테고리 / 반복여부 / 반복주기) -->
+                        <!-- 자산관리 전용 입력 그리드 -->
                         <div class="input-grid" id="asset-input-grid" style="display: none;">
                             <input type="date" id="asset-date" class="full-width" required>
                             <input type="text" id="asset-place" placeholder="투자처 (예: 주식, 적금 등)" required>
                             <input type="number" id="asset-amount" placeholder="금액 (원)" required>
                             <input type="text" id="asset-item" placeholder="내역 상세" class="full-width" required>
 
-                            <!-- 은행명 선택 영역 -->
                             <div class="selection-container full-width" style="margin-bottom:12px;">
                                 <span class="selection-label">은행명 선택</span>
                                 <div class="selection-list" id="bank-list"></div>
                             </div>
 
-                            <!-- 카테고리 선택 영역 (추가/제거 기능 포함) -->
                             <div class="selection-container full-width" style="margin-bottom:12px;">
                                 <span class="selection-label">자산 카테고리</span>
                                 <div class="selection-list" id="asset-category-list"></div>
                             </div>
 
-                            <!-- 반복 여부 및 주기 설정 -->
                             <div class="fixed-expense-wrapper full-width" style="background:#f8f9fa;">
                                 <input type="checkbox" id="asset-is-repeating" onchange="toggleAssetRepeating()">
                                 <label for="asset-is-repeating">자산 납입 반복 설정</label>
@@ -388,14 +368,10 @@
                 <!-- 이번 달 요약 카드 -->
                 <div class="stats-card">
                     <h3 class="stats-title" id="current-month-title">이번 달 요약</h3>
-                    <div class="summary-grid-3">
+                    <div class="summary-grid-2">
                         <div class="summary-box">
                             <div class="summary-label">총 수입</div>
                             <div class="summary-val val-inc" id="dash-income">0</div>
-                        </div>
-                        <div class="summary-box">
-                            <div class="summary-label" id="salary-label-text">지난달 월급</div>
-                            <div class="summary-val val-inc" id="dash-salary">0</div>
                         </div>
                         <div class="summary-box">
                             <div class="summary-label">총 지출</div>
@@ -403,44 +379,38 @@
                         </div>
                     </div>
                     <div style="font-size: 13px; color: #555; margin-bottom: 6px; display: flex; justify-content: space-between; background: #fff; padding: 7px 10px; border-radius: 6px; border: 1px solid #eee;">
+                        <span>총 자산 투자액</span>
+                        <strong id="dash-asset" style="color: var(--primary);">0원</strong>
+                    </div>
+                    <div style="font-size: 13px; color: #555; margin-bottom: 6px; display: flex; justify-content: space-between; background: #fff; padding: 7px 10px; border-radius: 6px; border: 1px solid #eee;">
                         <span>총 목표 지출</span>
                         <strong id="dash-total-budget" style="color: var(--expense);">0원</strong>
                     </div>
                     <div style="font-size: 13px; color: #555; margin-bottom: 6px; display: flex; justify-content: space-between; background: #fff; padding: 7px 10px; border-radius: 6px; border: 1px solid #eee;">
-                        <span>목표 가용예산 <span style="font-size:10px; color:#888;">(수입+월급-총목표지출)</span></span>
+                        <span>순 가용 잔액 <span style="font-size:10px; color:#888;">(수입-지출-투자)</span></span>
                         <strong id="dash-available-budget" style="color: var(--primary);">0원</strong>
                     </div>
-                    <div style="font-size: 13px; color: #555; margin-bottom: 12px; display: flex; justify-content: space-between; background: #fff; padding: 7px 10px; border-radius: 6px; border: 1px solid #eee;">
-                        <span>실제 지출과 목표 지출의 차액</span>
-                        <strong id="dash-budget-diff">0원</strong>
-                    </div>
-                    <!-- 💡 [추가] 총 자산 투자액 표시 줄 -->
-                        <div style="font-size: 13px; color: #555; margin-bottom: 12px; display: flex; justify-content: space-between; background: #fff; padding: 7px 10px; border-radius: 6px; border: 1px solid #eee;">
-                            <span>총 자산 투자액</span>
-                            <strong id="dash-asset" style="color: var(--primary);">0원</strong>
-                        </div>
-
-                        <!-- 💡 [추가] 자산관리 상세 내역 리스트 영역 -->
-                        <div style="margin-bottom: 12px; padding: 10px; background: #fff; border-radius: 8px; border: 1px solid #eee;">
-                            <div style="font-size: 12px; font-weight: 700; color: #2c3e50; margin-bottom: 6px;">💼 당월 자산관리 상세 내역</div>
-                            <div id="dash-asset-details-list" style="max-height: 120px; overflow-y: auto; font-size: 11px;"></div>
-                        </div>
                     <div class="total-balance">
                         <div class="balance-label">현재 예산 <button class="edit-budget-btn" onclick="editCurrentBudget()" style="background:none; border:1px solid #ccc; border-radius:4px; padding:2px 6px; cursor:pointer; font-size:11px;">수정</button></div>
                         <div class="balance-val"><span id="dash-balance">0</span>원</div>
                     </div>
                 </div>
 
-                <!-- 이번 달 고정 지출 리스트 -->
+                <!-- 고정 지출 리스트 -->
                 <div class="stats-card">
                     <h3 class="stats-title">고정 지출 리스트</h3>
                     <div id="dashboard-fixed-expense-list"></div>
                 </div>
+
+                <!-- 자산관리 현황 리스트 카드 (New) -->
+                <div class="stats-card">
+                    <h3 class="stats-title">자산관리 현황</h3>
+                    <div id="dashboard-asset-list"></div>
+                </div>
             </div>
 
-            <!-- 오른쪽: 최적화된 패널 (달력 + 카테고리별 예산 카드) -->
+            <!-- 오른쪽: 패널 (달력 + 카테고리별 예산 카드) -->
             <div class="right-panel right-calendar-pane">
-                <!-- 상단: 달력 및 상세 내역 블록 -->
                 <div class="calendar-and-details-block">
                     <div class="calendar-wrapper" id="calendar-wrapper">
                         <div class="calendar-header">
@@ -459,7 +429,6 @@
                         </div>
                     </div>
 
-                    <!-- 달력 바로 아래에 위치하는 일별 상세 내역 -->
                     <div id="daily-detail-section" class="daily-detail-section">
                         <div class="daily-detail-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
                             <strong id="daily-detail-title" style="color:#333;">상세 내역</strong>
@@ -469,7 +438,6 @@
                     </div>
                 </div>
 
-                <!-- 하단: 카테고리별 예산 카드 -->
                 <div class="stats-cards-grid">
                     <div class="stats-card">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
@@ -485,7 +453,7 @@
 
     <!-- 2. 통계 및 분석 탭 -->
     <div id="analytics-section" class="section-content">
-        <div class="stats-card billing-card">
+        <div class="stats-card billing-card" style="margin-bottom:20px;">
             <div class="billing-title">
                 <h3 class="stats-title" style="margin:0; color: #c0392b;" id="billing-main-title">💳 카드 대금 결산 (22일 결제예정)</h3>
                 <span id="billing-period-badge" style="font-size:12px; background:white; padding:4px 8px; border-radius:12px; border:1px solid #ffd6d6;">전월 10일 ~ 당월 9일 사용분</span>
@@ -536,7 +504,7 @@
 
     <!-- 3. 일정 및 설정 탭 -->
     <div id="schedule-section" class="section-content">
-        <div class="stats-card" style="padding: 20px; background: #fdfaf2; border-color: #f7e6b7;">
+        <div class="stats-card" style="padding: 20px; background: #fdfaf2; border-color: #f7e6b7; margin-bottom:20px;">
             <h3 class="stats-title">💾 데이터 백업 및 복구</h3>
             <p style="font-size: 13px; color: #555; margin-bottom: 16px; line-height: 1.5;">
                 브라우저나 기기를 변경할 때 데이터를 안전하게 보관하세요.
@@ -550,7 +518,7 @@
             </div>
         </div>
 
-        <div class="stats-card" style="padding: 20px;">
+        <div class="stats-card" style="padding: 20px; margin-bottom:20px;">
             <h3 class="stats-title">수입 및 결제일 설정</h3>
             <div class="schedule-item">
                 <span style="font-weight:600; color:var(--income)">💰 급여 입금일</span>
@@ -594,9 +562,8 @@
 </div>
 
 <script>
-    // 💡 구글 앱스 스크립트 웹 앱 URL을 아래에 입력해 주세요
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzhsPUwzDTaVhGwzeP8DgNNBHi8mPDFcRsq8uaGoLtDisMLRAD2UR5NkITCotg1D0Th7Q/exec";
-    const STORAGE_KEY = 'smart_account_data_v35';
+    const STORAGE_KEY = 'smart_account_data_v36';
 
     let entries = [];
     let expCategories = [
@@ -611,26 +578,22 @@
         { id: 'inc2', name: '부수입', color: '#e67e22' },
         { id: 'inc3', name: '기타수입', color: '#34495e' }
     ];
-    let payments = [
-        { id: 'pay1', name: '신용카드', type: 'card', payDate: 22 },
-        { id: 'pay3', name: '카카오페이(현금)', type: 'cash', payDate: null }
-    ];
-    let userSettings = { payday: 21 };
-    let manualCurrentBudget = null; 
-
-    // 💡 자산관리용 데이터 배열 추가
     let assetCategories = [
         { id: 'ast1', name: '주식/ETF', color: '#3498db' },
         { id: 'ast2', name: '예적금', color: '#2ecc71' }
+    ];
+    let payments = [
+        { id: 'pay1', name: '신용카드', type: 'card', payDate: 22 },
+        { id: 'pay3', name: '카카오페이(현금)', type: 'cash', payDate: null }
     ];
     let banks = [
         { id: 'bank1', name: '신한은행' },
         { id: 'bank2', name: '국민은행' },
         { id: 'bank3', name: '저축은행' }
     ];
-    
+    let userSettings = { payday: 21 };
+    let manualCurrentBudget = null; 
 
-    // 구글 시트 연동 로드 함수
     async function loadData() {
         try {
             const response = await fetch(WEB_APP_URL);
@@ -639,7 +602,9 @@
                 entries = data.entries || [];
                 expCategories = data.expCategories || expCategories;
                 incCategories = data.incCategories || incCategories;
+                assetCategories = data.assetCategories || assetCategories;
                 payments = data.payments || payments;
+                banks = data.banks || banks;
                 userSettings = data.userSettings || userSettings;
                 manualCurrentBudget = data.manualCurrentBudget !== undefined ? data.manualCurrentBudget : null;
                 return;
@@ -648,7 +613,6 @@
             console.warn("구글 시트 로드 실패, 로컬 저장소 데이터를 불러옵니다.", e);
         }
 
-        // 실패 시 로컬 스토리지 백업 불러오기
         const saved = localStorage.getItem(STORAGE_KEY);
         if (saved) {
             try {
@@ -656,7 +620,9 @@
                 if(data.entries) entries = data.entries;
                 if(data.expCategories) expCategories = data.expCategories;
                 if(data.incCategories) incCategories = data.incCategories;
+                if(data.assetCategories) assetCategories = data.assetCategories;
                 if(data.payments) payments = data.payments;
+                if(data.banks) banks = data.banks;
                 if(data.userSettings) userSettings = data.userSettings;
                 if(data.manualCurrentBudget !== undefined) manualCurrentBudget = data.manualCurrentBudget;
             } catch (err) {
@@ -665,14 +631,10 @@
         }
     }
 
-    // 구글 시트 연동 저장 함수
     async function saveData() {
-        const data = { entries, expCategories, incCategories, payments, userSettings, manualCurrentBudget };
-        
-        // 로컬 저장소 우선 저장
+        const data = { entries, expCategories, incCategories, assetCategories, payments, banks, userSettings, manualCurrentBudget };
         localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
 
-        // 구글 시트로 백그라운드 동기화
         try {
             await fetch(WEB_APP_URL, {
                 method: 'POST',
@@ -728,7 +690,7 @@
     }
 
     function exportData() {
-        const data = { entries, expCategories, incCategories, payments, userSettings, manualCurrentBudget };
+        const data = { entries, expCategories, incCategories, assetCategories, payments, banks, userSettings, manualCurrentBudget };
         const dataStr = JSON.stringify(data);
         const blob = new Blob([dataStr], { type: "application/json" });
         const url = URL.createObjectURL(blob);
@@ -746,15 +708,15 @@
         reader.onload = function(e) {
             try {
                 const parsed = JSON.parse(e.target.result);
-                
-                // 💡 구버전(배열 형태)과 신버전(객체 형태) 모두 호환되도록 처리
                 if (Array.isArray(parsed)) {
-                    entries = parsed; // 구버전 배열 데이터 반영
+                    entries = parsed;
                 } else if (parsed && typeof parsed === 'object') {
                     if (parsed.entries) entries = parsed.entries;
                     if (parsed.expCategories) expCategories = parsed.expCategories;
                     if (parsed.incCategories) incCategories = parsed.incCategories;
+                    if (parsed.assetCategories) assetCategories = parsed.assetCategories;
                     if (parsed.payments) payments = parsed.payments;
+                    if (parsed.banks) banks = parsed.banks;
                     if (parsed.userSettings) userSettings = parsed.userSettings;
                     if (parsed.manualCurrentBudget !== undefined) manualCurrentBudget = parsed.manualCurrentBudget;
                 } else {
@@ -790,13 +752,13 @@
         return localDate.toISOString().split('T')[0];
     }
 
-    // 비동기 초기화 실행
-async function initApp() {
+    async function initApp() {
         await loadData();
         processRepeatingFixedExpensesForMonth(currentYear, currentMonth);
         document.getElementById('date').value = getLocalDateString(today);
+        document.getElementById('asset-date').value = getLocalDateString(today);
         toggleFormType();
-        renderSelections(true); // 💡 앱 초기 로딩 시 카테고리/결제수단 렌더링 추가
+        renderSelections(true);
         renderScheduleSettings();
         renderCategoryBudgetSettings();
         updateUI();
@@ -821,7 +783,6 @@ async function initApp() {
         }
     }
 
-// 1. 할부 체크박스 토글 시 개월 수 선택창 보이기/숨기기
     function toggleInstallment() {
         const isChecked = document.getElementById('is-installment').checked;
         const monthsContainer = document.getElementById('installment-months-container');
@@ -830,7 +791,6 @@ async function initApp() {
         }
     }
 
-    // 2. 고정비 체크박스 토글 시 반복 옵션 보이기/숨기기
     function toggleFixedOptions() {
         const isChecked = document.getElementById('is-fixed').checked;
         const fixedContainer = document.getElementById('fixed-options-container');
@@ -839,9 +799,13 @@ async function initApp() {
         }
     }
 
-    // 3. 지출/수입 전환 시 할부 영역 노출 제어 (수입일 때는 할부 불가)
- // 3. 지출/수입 전환 시 할부 영역 노출 제어 및 카테고리 목록 렌더링
-function toggleFormType() {
+    function toggleAssetRepeating() {
+        const isChecked = document.getElementById('asset-is-repeating').checked;
+        const cycleContainer = document.getElementById('asset-repeat-cycle-container');
+        if (cycleContainer) cycleContainer.style.display = isChecked ? 'block' : 'none';
+    }
+
+    function toggleFormType() {
         const isExpense = document.getElementById('type-expense').checked;
         const isIncome = document.getElementById('type-income').checked;
         const isAsset = document.getElementById('type-asset').checked;
@@ -875,13 +839,44 @@ function toggleFormType() {
         }
     }
 
-    function toggleAssetRepeating() {
-        const isChecked = document.getElementById('asset-is-repeating').checked;
-        const cycleContainer = document.getElementById('asset-repeat-cycle-container');
-        if (cycleContainer) cycleContainer.style.display = isChecked ? 'block' : 'none';
+    function renderSelections(isExpense) {
+        const catList = document.getElementById('category-list');
+        catList.innerHTML = '';
+        const targetCats = isExpense ? expCategories : incCategories;
+        
+        targetCats.forEach((cat, idx) => {
+            catList.innerHTML += `
+                <div class="selection-item">
+                    <input type="radio" id="${cat.id}" name="category" value="${cat.id}" ${idx === 0 ? 'checked' : ''}>
+                    <label for="${cat.id}" onclick="setTimeout(updateStyles, 10)">${cat.name}</label>
+                </div>`;
+        });
+        
+        let actionButtonsHtml = `<div class="action-btns-wrapper">
+            <button type="button" class="action-btn-small" onclick="addCategory(${isExpense})">+ 추가</button>`;
+        if (isExpense) {
+            actionButtonsHtml += `<button type="button" class="action-btn-small" onclick="openCategoryModal()">수정</button>`;
+        }
+        actionButtonsHtml += `<button type="button" class="action-btn-small del-btn-small" onclick="deleteSelectedCategory(${isExpense})">- 삭제</button></div>`;
+        
+        catList.innerHTML += actionButtonsHtml;
+
+        if (isExpense) {
+            const payList = document.getElementById('payment-list');
+            payList.innerHTML = '';
+            payments.forEach((pay, idx) => {
+                payList.innerHTML += `<div class="selection-item"><input type="radio" id="${pay.id}" name="payment" value="${pay.id}" ${idx === 0 ? 'checked' : ''}><label for="${pay.id}" onclick="setTimeout(updateStyles, 10)">${pay.name}</label></div>`;
+            });
+            payList.innerHTML += `
+                <div class="action-btns-wrapper">
+                    <button type="button" class="action-btn-small" onclick="addPayment()">+ 추가</button>
+                    <button type="button" class="action-btn-small" onclick="editSelectedPayment()">수정</button>
+                    <button type="button" class="action-btn-small del-btn-small" onclick="deleteSelectedPayment()">- 삭제</button>
+                </div>`;
+        }
+        updateStyles();
     }
 
-    // 자산 카테고리 및 은행명 렌더링 함수
     function renderAssetSelections() {
         const catList = document.getElementById('asset-category-list');
         if (catList) {
@@ -919,6 +914,23 @@ function toggleFormType() {
         updateAssetStyles();
     }
 
+    function updateStyles() {
+        document.querySelectorAll('input[name="category"]').forEach(radio => {
+            const label = document.querySelector(`label[for="${radio.id}"]`);
+            const targetCats = document.getElementById('type-expense').checked ? expCategories : incCategories;
+            const cat = targetCats.find(c => c.id === radio.value);
+            if (radio.checked && cat) { label.style.background = cat.color; label.style.color = '#fff'; label.style.borderColor = cat.color; } 
+            else { label.style.background = '#f8f9fa'; label.style.color = '#555'; label.style.borderColor = 'var(--border)'; }
+        });
+        if (document.getElementById('type-expense').checked) {
+            document.querySelectorAll('input[name="payment"]').forEach(radio => {
+                const label = document.querySelector(`label[for="${radio.id}"]`);
+                if (radio.checked) { label.style.background = '#34495e'; label.style.color = '#fff'; label.style.borderColor = '#34495e'; } 
+                else { label.style.background = '#f8f9fa'; label.style.color = '#555'; label.style.borderColor = 'var(--border)'; }
+            });
+        }
+    }
+
     function updateAssetStyles() {
         document.querySelectorAll('input[name="asset-category"]').forEach(radio => {
             const label = document.querySelector(`label[for="${radio.id}"]`);
@@ -931,6 +943,44 @@ function toggleFormType() {
             if (radio.checked) { label.style.background = '#34495e'; label.style.color = '#fff'; label.style.borderColor = '#34495e'; } 
             else { label.style.background = '#f8f9fa'; label.style.color = '#555'; label.style.borderColor = 'var(--border)'; }
         });
+    }
+
+    function getUniqueColor() {
+        const existingColors = new Set([...expCategories, ...incCategories, ...assetCategories].map(c => c.color));
+        for (let color of colorPalette) {
+            if (!existingColors.has(color)) return color;
+        }
+        return '#' + Math.floor(Math.random()*16777215).toString(16);
+    }
+
+    function addCategory(isExpense) {
+        const name = prompt("새로운 카테고리 이름을 입력하세요:");
+        if (name && name.trim()) {
+            const newCat = { id: 'cat' + Date.now(), name: name.trim(), color: getUniqueColor() };
+            if(isExpense) {
+                const budgetStr = prompt(`'${name}'의 목표 금액(예산)을 입력하세요:`, "0");
+                newCat.budget = parseInt(budgetStr.replace(/[^0-9]/g, '')) || 0;
+                expCategories.push(newCat);
+            } else { incCategories.push(newCat); }
+            saveData();
+            renderSelections(isExpense); renderCategoryBudgetSettings(); updateUI();
+        }
+    }
+
+    function deleteSelectedCategory(isExpense) {
+        const selectedRadio = document.querySelector('input[name="category"]:checked');
+        if(!selectedRadio) return;
+        const catId = selectedRadio.value;
+        const targetCats = isExpense ? expCategories : incCategories;
+        const cat = targetCats.find(c => c.id === catId);
+        
+        if(targetCats.length <= 1) return alert("최소 1개의 카테고리는 남아있어야 합니다.");
+        if(confirm(`'${cat.name}' 카테고리를 정말 삭제하시겠습니까?\n(기존 내역의 분류는 유지됩니다)`)) {
+            if(isExpense) { expCategories = expCategories.filter(c => c.id !== catId); } 
+            else { incCategories = incCategories.filter(c => c.id !== catId); }
+            saveData();
+            renderSelections(isExpense); renderCategoryBudgetSettings(); updateUI();
+        }
     }
 
     function addAssetCategory() {
@@ -970,99 +1020,6 @@ function toggleFormType() {
             banks = banks.filter(b => b.id !== selected.value);
             saveData();
             renderAssetSelections();
-        }
-    }
-    
-    function renderSelections(isExpense) {
-        const catList = document.getElementById('category-list');
-        catList.innerHTML = '';
-        const targetCats = isExpense ? expCategories : incCategories;
-        
-        targetCats.forEach((cat, idx) => {
-            catList.innerHTML += `
-                <div class="selection-item">
-                    <input type="radio" id="${cat.id}" name="category" value="${cat.id}" ${idx === 0 ? 'checked' : ''}>
-                    <label for="${cat.id}" onclick="setTimeout(updateStyles, 10)">${cat.name}</label>
-                </div>`;
-        });
-        
-        let actionButtonsHtml = `<div class="action-btns-wrapper">
-            <button type="button" class="action-btn-small" onclick="addCategory(${isExpense})">+ 추가</button>`;
-        if (isExpense) {
-            actionButtonsHtml += `<button type="button" class="action-btn-small" onclick="openCategoryModal()">수정</button>`;
-        }
-        actionButtonsHtml += `<button type="button" class="action-btn-small del-btn-small" onclick="deleteSelectedCategory(${isExpense})">- 삭제</button></div>`;
-        
-        catList.innerHTML += actionButtonsHtml;
-
-        if (isExpense) {
-            const payList = document.getElementById('payment-list');
-            payList.innerHTML = '';
-            payments.forEach((pay, idx) => {
-                payList.innerHTML += `<div class="selection-item"><input type="radio" id="${pay.id}" name="payment" value="${pay.id}" ${idx === 0 ? 'checked' : ''}><label for="${pay.id}" onclick="setTimeout(updateStyles, 10)">${pay.name}</label></div>`;
-            });
-            payList.innerHTML += `
-                <div class="action-btns-wrapper">
-                    <button type="button" class="action-btn-small" onclick="addPayment()">+ 추가</button>
-                    <button type="button" class="action-btn-small" onclick="editSelectedPayment()">수정</button>
-                    <button type="button" class="action-btn-small del-btn-small" onclick="deleteSelectedPayment()">- 삭제</button>
-                </div>`;
-        }
-        updateStyles();
-    }
-
-    function updateStyles() {
-        document.querySelectorAll('input[name="category"]').forEach(radio => {
-            const label = document.querySelector(`label[for="${radio.id}"]`);
-            const targetCats = document.getElementById('type-expense').checked ? expCategories : incCategories;
-            const cat = targetCats.find(c => c.id === radio.value);
-            if (radio.checked && cat) { label.style.background = cat.color; label.style.color = '#fff'; label.style.borderColor = cat.color; } 
-            else { label.style.background = '#f8f9fa'; label.style.color = '#555'; label.style.borderColor = 'var(--border)'; }
-        });
-        if (document.getElementById('type-expense').checked) {
-            document.querySelectorAll('input[name="payment"]').forEach(radio => {
-                const label = document.querySelector(`label[for="${radio.id}"]`);
-                if (radio.checked) { label.style.background = '#34495e'; label.style.color = '#fff'; label.style.borderColor = '#34495e'; } 
-                else { label.style.background = '#f8f9fa'; label.style.color = '#555'; label.style.borderColor = 'var(--border)'; }
-            });
-        }
-    }
-
-    function getUniqueColor() {
-        const existingColors = new Set([...expCategories, ...incCategories].map(c => c.color));
-        for (let color of colorPalette) {
-            if (!existingColors.has(color)) return color;
-        }
-        return '#' + Math.floor(Math.random()*16777215).toString(16);
-    }
-
-    function addCategory(isExpense) {
-        const name = prompt("새로운 카테고리 이름을 입력하세요:");
-        if (name && name.trim()) {
-            const newCat = { id: 'cat' + Date.now(), name: name.trim(), color: getUniqueColor() };
-            if(isExpense) {
-                const budgetStr = prompt(`'${name}'의 목표 금액(예산)을 입력하세요:`, "0");
-                newCat.budget = parseInt(budgetStr.replace(/[^0-9]/g, '')) || 0;
-                expCategories.push(newCat);
-            } else { incCategories.push(newCat); }
-            saveData();
-            renderSelections(isExpense); renderCategoryBudgetSettings(); updateUI();
-        }
-    }
-
-    function deleteSelectedCategory(isExpense) {
-        const selectedRadio = document.querySelector('input[name="category"]:checked');
-        if(!selectedRadio) return;
-        const catId = selectedRadio.value;
-        const targetCats = isExpense ? expCategories : incCategories;
-        const cat = targetCats.find(c => c.id === catId);
-        
-        if(targetCats.length <= 1) return alert("최소 1개의 카테고리는 남아있어야 합니다.");
-        if(confirm(`'${cat.name}' 카테고리를 정말 삭제하시겠습니까?\n(기존 내역의 분류는 유지됩니다)`)) {
-            if(isExpense) { expCategories = expCategories.filter(c => c.id !== catId); } 
-            else { incCategories = incCategories.filter(c => c.id !== catId); }
-            saveData();
-            renderSelections(isExpense); renderCategoryBudgetSettings(); updateUI();
         }
     }
 
@@ -1189,7 +1146,7 @@ function toggleFormType() {
 
     function editCurrentBudget() {
         let totals = calculateSelectedMonthTotals();
-        let defaultBudget = totals.income + totals.salary - totals.expense;
+        let defaultBudget = totals.income - totals.expense - totals.asset;
         let displayVal = manualCurrentBudget !== null ? manualCurrentBudget : defaultBudget;
         const val = prompt(`수정할 '현재 예산'을 입력하세요 (숫자만).\n\n※ 빈칸으로 두고 확인을 누르면 다시 자동계산으로 돌아갑니다.`, displayVal);
         if(val === null) return; 
@@ -1199,17 +1156,17 @@ function toggleFormType() {
         updateDashboardStats();
     }
 
-// 💡 [수정] 모든 수정 시 중복 생성 없이 기존 데이터를 정확히 업데이트하는 폼 제출 핸들러
+    // 통합 폼 제출 핸들러 (지출, 수입, 자산관리 완벽 지원)
     document.getElementById('entry-form').addEventListener('submit', function(e) {
         e.preventDefault();
-        
-        // 💡 [추가] 자산관리 탭이 선택되어 있을 때 처리하는 로직
         const isAsset = document.getElementById('type-asset')?.checked;
+
         if (isAsset) {
             const totalAmount = parseInt(document.getElementById('asset-amount').value);
             if (isNaN(totalAmount) || totalAmount <= 0) return alert("올바른 금액을 입력하세요.");
 
             const startDateVal = document.getElementById('asset-date').value;
+            const baseDate = new Date(startDateVal);
             const place = document.getElementById('asset-place').value;
             const item = document.getElementById('asset-item').value;
             const categoryId = document.querySelector('input[name="asset-category"]:checked')?.value || assetCategories[0].id;
@@ -1240,11 +1197,14 @@ function toggleFormType() {
 
             saveData();
             cancelEdit();
+            currentYear = baseDate.getFullYear();
+            currentMonth = baseDate.getMonth();
             selectDate(startDateVal);
             updateUI();
-            return; // 자산관리는 여기서 저장 후 종료
+            return;
         }
-        e.preventDefault();
+
+        // 지출 / 수입 처리 로직
         const type = document.getElementById('type-expense').checked ? 'expense' : 'income';
         const totalAmount = parseInt(document.getElementById('amount').value);
         if (isNaN(totalAmount) || totalAmount <= 0) return alert("올바른 금액을 입력하세요.");
@@ -1283,7 +1243,6 @@ function toggleFormType() {
             }
 
             if (updateAllFuture && originalEntry.isFixed && originalEntry.isRepeating) {
-                // 1. 고정비 반복 일괄 수정
                 entries.forEach(e => {
                     if (e.isFixed && e.isRepeating && e.categoryId === originalEntry.categoryId && e.place === originalEntry.place && new Date(e.date) >= new Date(originalEntry.date)) {
                         e.place = place;
@@ -1296,7 +1255,6 @@ function toggleFormType() {
                 finishFormSubmission(baseDate, startDateVal);
                 return;
             } else if (updateAllFuture && originalEntry && originalEntry.groupId) {
-                // 2. 기존 할부 그룹 전체 수정 (원금 기준 재분할)
                 entries = entries.filter(e => e.groupId !== originalEntry.groupId);
                 
                 const splitAmount = Math.floor(totalAmount / months);
@@ -1333,39 +1291,18 @@ function toggleFormType() {
                 finishFormSubmission(baseDate, startDateVal);
                 return;
             } else {
-                // 3. 단건 수정인 경우 (또는 일시불 -> 할부로 전환하는 경우)
                 if (isInstallment) {
-                    // 일시불을 할부로 전환할 때만 기존 단건 삭제 후 아래에서 할부 생성 로직 탐
                     if (originalEntry && originalEntry.groupId) {
                         entries = entries.filter(e => e.groupId !== originalEntry.groupId);
                     } else {
                         entries = entries.filter(e => String(e.id) !== String(editingId));
                     }
                 } else {
-                    // 💡 [핵심] 일반 단건 수정: 기존 ID를 유지한 채 데이터만 정확히 덮어씌움 (중복 생성 원천 차단)
-                    const index = entries.findIndex(e => String(e.id) === String(editingId));
-                    if (index !== -1) {
-                        entries[index] = {
-                            ...entries[index],
-                            type,
-                            date: startDateVal,
-                            categoryId,
-                            paymentId,
-                            place,
-                            item,
-                            amount: totalAmount,
-                            isFixed,
-                            isRepeating,
-                            groupId: null
-                        };
-                    }
-                    finishFormSubmission(baseDate, startDateVal);
-                    return; // 수정 완료 후 함수 즉시 종료 (중복 생성 방지)
+                    entries = entries.filter(e => String(e.id) !== String(editingId));
                 }
             }
         }
 
-        // 4. 신규 등록이거나, 일시불에서 할부로 새로 전환되어 기존 데이터가 제거된 경우
         const splitAmount = Math.floor(totalAmount / months);
         const remainder = totalAmount % months; 
         const newGroupId = isInstallment ? 'group_' + Date.now() : null;
@@ -1401,16 +1338,20 @@ function toggleFormType() {
         finishFormSubmission(baseDate, startDateVal);
     });
 
-    // 💡 폼 저장 및 입력창 초기화를 담당하는 공통 헬퍼 함수
     function finishFormSubmission(baseDate, startDateVal) {
         saveData();
         
         document.getElementById('place').value = '';
         document.getElementById('amount').value = '';
         document.getElementById('item').value = '';
+        document.getElementById('asset-place').value = '';
+        document.getElementById('asset-amount').value = '';
+        document.getElementById('asset-item').value = '';
         document.getElementById('is-fixed').checked = false;
         document.getElementById('is-repeating').checked = false;
+        document.getElementById('asset-is-repeating').checked = false;
         document.getElementById('fixed-options-container').style.display = 'none';
+        document.getElementById('asset-repeat-cycle-container').style.display = 'none';
         
         if(document.getElementById('is-installment')) {
             document.getElementById('is-installment').checked = false;
@@ -1427,7 +1368,7 @@ function toggleFormType() {
         updateUI();
     }
     
-function deleteEntry(id) {
+    function deleteEntry(id) {
         const targetEntry = entries.find(e => String(e.id) === String(id));
         if (!targetEntry) return;
 
@@ -1450,43 +1391,64 @@ function deleteEntry(id) {
         if(selectedDateStr) selectDate(selectedDateStr);
     }
     
-function editEntry(id) {
+    function editEntry(id) {
         const ent = entries.find(e => String(e.id) === String(id)); 
         if (!ent) return;
         editingId = id;
         
-        document.getElementById(`type-${ent.type}`).click(); 
-        document.getElementById('date').value = ent.date; 
-        document.getElementById('place').value = ent.place; 
-        document.getElementById('amount').value = ent.amount; 
-        
-        let cleanItem = ent.item.replace(/\s\(\d+\/\d+회차\)/, '');
-        document.getElementById('item').value = cleanItem;
-
-        setTimeout(() => {
-            const catEl = document.getElementById(ent.categoryId); if(catEl) catEl.checked = true;
-            if(ent.type === 'expense') {
-                const payEl = document.getElementById(ent.paymentId); if(payEl) payEl.checked = true;
-                document.getElementById('is-fixed').checked = ent.isFixed;
-                if(ent.isFixed) {
-                    document.getElementById('fixed-options-container').style.display = 'block';
-                    document.getElementById('is-repeating').checked = ent.isRepeating || false;
+        if (ent.type === 'asset') {
+            document.getElementById('type-asset').click();
+            document.getElementById('asset-date').value = ent.date;
+            document.getElementById('asset-place').value = ent.place;
+            document.getElementById('asset-amount').value = ent.amount;
+            document.getElementById('asset-item').value = ent.item;
+            setTimeout(() => {
+                const catEl = document.getElementById('ast_cat_' + ent.categoryId); if(catEl) catEl.checked = true;
+                const bankEl = document.getElementById('bank_' + ent.paymentId); if(bankEl) bankEl.checked = true;
+                document.getElementById('asset-is-repeating').checked = ent.isRepeating || false;
+                if(ent.isRepeating) {
+                    document.getElementById('asset-repeat-cycle-container').style.display = 'block';
+                    document.getElementById('asset-repeat-cycle').value = ent.repeatCycle || 'monthly';
                 }
-            }
-            updateStyles();
-        }, 50);
+                updateAssetStyles();
+            }, 50);
+        } else {
+            document.getElementById(`type-${ent.type}`).click(); 
+            document.getElementById('date').value = ent.date; 
+            document.getElementById('place').value = ent.place; 
+            document.getElementById('amount').value = ent.amount; 
+            
+            let cleanItem = ent.item.replace(/\s\(\d+\/\d+회차\)/, '');
+            document.getElementById('item').value = cleanItem;
+
+            setTimeout(() => {
+                const catEl = document.getElementById(ent.categoryId); if(catEl) catEl.checked = true;
+                if(ent.type === 'expense') {
+                    const payEl = document.getElementById(ent.paymentId); if(payEl) payEl.checked = true;
+                    document.getElementById('is-fixed').checked = ent.isFixed;
+                    if(ent.isFixed) {
+                        document.getElementById('fixed-options-container').style.display = 'block';
+                        document.getElementById('is-repeating').checked = ent.isRepeating || false;
+                    }
+                }
+                updateStyles();
+            }, 50);
+        }
+
         document.getElementById('submit-btn').innerText = '수정 내용 저장'; 
         document.getElementById('cancel-edit-btn').style.display = 'block'; 
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
     
     function cancelEdit() {
-        editingId = null; document.getElementById('place').value = ''; document.getElementById('item').value = ''; document.getElementById('amount').value = ''; document.getElementById('is-fixed').checked = false;
-        document.getElementById('is-installment').checked = false;
-        document.getElementById('installment-months-container').style.display = 'none';
-        document.getElementById('is-repeating').checked = false;
-        document.getElementById('fixed-options-container').style.display = 'none';
-        document.getElementById('submit-btn').innerText = '내역 추가하기'; document.getElementById('cancel-edit-btn').style.display = 'none';
+        editingId = null; 
+        document.getElementById('entry-form').reset();
+        document.getElementById('submit-btn').innerText = '내역 추가하기'; 
+        document.getElementById('cancel-edit-btn').style.display = 'none';
+        if(document.getElementById('installment-months-container')) document.getElementById('installment-months-container').style.display = 'none';
+        if(document.getElementById('fixed-options-container')) document.getElementById('fixed-options-container').style.display = 'none';
+        if(document.getElementById('asset-repeat-cycle-container')) document.getElementById('asset-repeat-cycle-container').style.display = 'none';
+        toggleFormType();
     }
     
     function updateUI() {
@@ -1496,6 +1458,7 @@ function editEntry(id) {
         updateDashboardBudgets(); 
         renderAnalytics(); 
         renderFixedExpenses();
+        renderDashboardAssetList();
     }
 
     function changeMonth(offset) {
@@ -1509,6 +1472,7 @@ function editEntry(id) {
         updateDashboardStats();
         updateDashboardBudgets();
         renderFixedExpenses();
+        renderDashboardAssetList();
         renderAnalytics();
     }
 
@@ -1539,7 +1503,8 @@ function editEntry(id) {
             const dStr = String(day).padStart(2, '0');
             const dateStr = `${currentYear}-${mStr}-${dStr}`;
             
-            const dayEntries = entries.filter(e => e.date === dateStr);
+            // 💡 달력에는 자산관리 항목을 제외하고 지출/수입만 반영
+            const dayEntries = entries.filter(e => e.date === dateStr && e.type !== 'asset');
             const isToday = dateStr === todayStr;
             const isSelected = dateStr === selectedDateStr;
 
@@ -1601,17 +1566,18 @@ function editEntry(id) {
         }
     }
 
-function selectDate(dateStr) {
+    function selectDate(dateStr) {
         selectedDateStr = dateStr; 
         document.getElementById('date').value = dateStr;
+        document.getElementById('asset-date').value = dateStr;
         
         renderCalendar(); 
         const listEl = document.getElementById('daily-entry-list');
         document.getElementById('daily-detail-title').innerText = `${parseInt(dateStr.split('-')[1])}월 ${parseInt(dateStr.split('-')[2])}일 상세 내역`;
         
         listEl.innerHTML = '';
-        const dayEntries = entries.filter(e => e.date === dateStr);
-        if (dayEntries.length === 0) listEl.innerHTML = '<li class="empty-state">해당 일자에 입력된 내역이 없습니다.</li>';
+        const dayEntries = entries.filter(e => e.date === dateStr && e.type !== 'asset');
+        if (dayEntries.length === 0) listEl.innerHTML = '<li class="empty-state">해당 일자에 입력된 지출/수입 내역이 없습니다.</li>';
         else {
             dayEntries.forEach(ent => {
                 const cat = ent.type==='expense'?expCategories.find(c=>c.id===ent.categoryId):incCategories.find(c=>c.id===ent.categoryId);
@@ -1622,13 +1588,13 @@ function selectDate(dateStr) {
                     if (ent.isFixed) badges += `<span class="badge badge-fixed">고정비</span>`;
                     if (ent.groupId) badges += `<span class="badge badge-installment">할부</span>`;
                 }
-                // 💡 ID를 문자열 따옴표로 감싸서 전달하도록 수정
                 listEl.innerHTML += `<li class="expense-item"><div style="flex: 1;"><div class="item-badges">${badges}</div><div class="item-main-text">${ent.place}</div><div class="item-sub-text">${ent.item}</div></div><div><span class="${ent.type==='expense'?'amount-exp':'amount-inc'}">${ent.type==='expense'?'-':'+'}${ent.amount.toLocaleString()}원</span><div class="item-actions"><button type="button" class="action-btn edit-btn" onclick="editEntry('${ent.id}')">수정</button><button type="button" class="action-btn delete-btn" onclick="deleteEntry('${ent.id}')">삭제</button></div></div></li>`;
             });
         }
         document.getElementById('daily-detail-section').style.display = 'block';
     }
-function closeDailyDetails() { 
+
+    function closeDailyDetails() { 
         selectedDateStr = null; 
         document.getElementById('daily-detail-section').style.display = 'none'; 
         renderCalendar(); 
@@ -1636,14 +1602,8 @@ function closeDailyDetails() {
 
     function calculateSelectedMonthTotals() {
         const selMonth = currentMonth + 1, selYear = currentYear;
-        let totalInc = 0, lastMonthSalary = 0, totalExp = 0, totalAsset = 0; // 💡 totalAsset 변수 추가
+        let totalInc = 0, totalExp = 0, totalAsset = 0;
         
-        let targetMonth = selMonth - 1;
-        let targetYear = selYear;
-        if (targetMonth === 0) { targetMonth = 12; targetYear -= 1; }
-
-        document.getElementById('salary-label-text').innerText = `${targetMonth}월 월급 (지난달)`;
-
         entries.forEach(ent => {
             const d = new Date(ent.date);
             const eMonth = d.getMonth() + 1;
@@ -1652,26 +1612,18 @@ function closeDailyDetails() {
             if (eMonth === selMonth && eYear === selYear) {
                 if (ent.type === 'income') totalInc += ent.amount;
                 if (ent.type === 'expense') totalExp += ent.amount;
-                if (ent.type === 'asset') totalAsset += ent.amount; // 💡 자산관리 금액 합산
-            }
-
-            if (eMonth === targetMonth && eYear === targetYear && ent.type === 'income') {
-                const cat = incCategories.find(c => c.id === ent.categoryId);
-                if (cat && cat.name === '월급') {
-                    lastMonthSalary += ent.amount;
-                }
+                if (ent.type === 'asset') totalAsset += ent.amount;
             }
         });
-        return { income: totalInc, salary: lastMonthSalary, expense: totalExp, asset: totalAsset }; // 💡 asset 반환값 추가
+        return { income: totalInc, expense: totalExp, asset: totalAsset };
     }
-function updateDashboardStats() {
+
+    function updateDashboardStats() {
         document.getElementById('current-month-title').innerText = `${currentMonth + 1}월 요약`;
         let totals = calculateSelectedMonthTotals();
         document.getElementById('dash-income').textContent = totals.income.toLocaleString();
-        document.getElementById('dash-salary').textContent = totals.salary.toLocaleString();
         document.getElementById('dash-expense').textContent = totals.expense.toLocaleString();
         
-        // 💡 총 자산 투자액 텍스트 반영
         const assetEl = document.getElementById('dash-asset');
         if (assetEl) assetEl.textContent = `${totals.asset.toLocaleString()}원`;
 
@@ -1679,61 +1631,17 @@ function updateDashboardStats() {
         expCategories.forEach(c => totalTargetBudget += (c.budget || 0));
         document.getElementById('dash-total-budget').textContent = `${totalTargetBudget.toLocaleString()}원`;
 
-        // 💡 목표 가용예산: (수입 + 월급) - (지출 + 자산투자액)
-        let availableBudget = totals.income + totals.salary - totals.expense - totals.asset;
+        // 순 가용 잔액: 총 수입 - 총 지출 - 총 자산 투자
+        let availableBudget = totals.income - totals.expense - totals.asset;
         const availEl = document.getElementById('dash-available-budget');
         availEl.textContent = `${availableBudget.toLocaleString()}원`;
-        availEl.style.color = availableBudget < 0 ? 'var(--expense)' : 'var(--income)';
+        availEl.style.color = availableBudget < 0 ? 'var(--expense)' : 'var(--primary)';
 
-        let diffBudget = totalTargetBudget - totals.expense;
-        const diffEl = document.getElementById('dash-budget-diff');
-        diffEl.textContent = `${diffBudget >= 0 ? '+' : ''}${diffBudget.toLocaleString()}원`;
-        diffEl.style.color = diffBudget < 0 ? 'var(--expense)' : 'var(--primary)';
-
-        let defaultBudget = totals.income + totals.salary - totals.expense - totals.asset;
+        let defaultBudget = totals.income - totals.expense - totals.asset;
         let displayBudget = manualCurrentBudget !== null ? manualCurrentBudget : defaultBudget;
         
         document.getElementById('dash-balance').textContent = displayBudget.toLocaleString();
         document.getElementById('dash-balance').style.color = displayBudget < 0 ? 'var(--expense)' : 'var(--primary)';
-
-        // 💡 자산관리 상세 리스트 렌더링 함수 호출
-        renderDashboardAssetDetails();
-    }
-
-    // 💡 [추가] 요약 카드 내부에 당월 자산관리 상세 내역을 그려주는 함수
-    function renderDashboardAssetDetails() {
-        const container = document.getElementById('dash-asset-details-list');
-        if (!container) return;
-
-        const curMonth = currentMonth + 1;
-        const curYear = currentYear;
-
-        const assetEntries = entries.filter(ent => {
-            if (ent.type !== 'asset') return false;
-            const d = new Date(ent.date);
-            return d.getFullYear() === curYear && (d.getMonth() + 1) === curMonth;
-        });
-
-        if (assetEntries.length === 0) {
-            container.innerHTML = '<div style="color: #888; text-align: center; padding: 4px 0;">이번 달 자산관리 내역이 없습니다.</div>';
-            return;
-        }
-
-        let html = '';
-        assetEntries.forEach(ent => {
-            const cat = assetCategories.find(c => c.id === ent.categoryId);
-            const bank = banks.find(b => b.id === ent.paymentId);
-            html += `
-                <div style="display: flex; justify-content: space-between; align-items: center; background: #f8f9fa; padding: 5px 6px; border-radius: 4px; border: 1px solid #eee; margin-bottom: 3px;">
-                    <div>
-                        <span style="font-weight: 600; color: #333;">${ent.place}</span>
-                        <span style="color: #666; font-size: 10px;">(${bank?.name || '은행'}·${cat?.name || '분류'})</span>
-                    </div>
-                    <strong style="color: var(--primary);">+${ent.amount.toLocaleString()}원</strong>
-                </div>
-            `;
-        });
-        container.innerHTML = html;
     }
 
     function updateDashboardBudgets() {
@@ -2257,6 +2165,51 @@ function updateDashboardStats() {
                 </div>`;
         });
         list.innerHTML += `<div style="text-align:right; margin-top:12px; font-weight:700; font-size:14px;">고정비 합계: <span style="color:var(--expense)">${totalFixed.toLocaleString()}원</span></div>`;
+    }
+
+    function renderDashboardAssetList() {
+        const list = document.getElementById('dashboard-asset-list');
+        if (!list) return;
+        list.innerHTML = '';
+
+        const curMonth = currentMonth + 1;
+        const curYear = currentYear;
+
+        const assetEntries = entries.filter(e => {
+            if (e.type !== 'asset') return false;
+            const d = new Date(e.date);
+            return d.getFullYear() === curYear && (d.getMonth() + 1) === curMonth;
+        });
+
+        if (assetEntries.length === 0) {
+            return list.innerHTML = '<div class="empty-state" style="padding:15px 0;">이번 달 자산관리 내역이 없습니다.</div>';
+        }
+
+        let totalAsset = 0;
+        assetEntries.forEach(ent => {
+            totalAsset += ent.amount;
+            const cat = assetCategories.find(c => c.id === ent.categoryId);
+            const bank = banks.find(b => b.id === ent.paymentId);
+            const catBadge = cat ? `<span class="badge" style="background-color: ${cat.color}">${cat.name}</span>` : '';
+            const bankBadge = bank ? `<span class="badge" style="background-color: #34495e">${bank.name}</span>` : '';
+
+            list.innerHTML += `
+                <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid #eee; font-size:13px;">
+                    <div>
+                        <div style="margin-bottom:4px; display:flex; gap:4px;">${catBadge}${bankBadge}</div>
+                        <strong style="color:#333; display:block;">${ent.place}</strong>
+                        <span style="font-size:11px; color:#888;">${ent.date} · ${ent.item}</span>
+                    </div>
+                    <div style="text-align:right;">
+                        <strong style="color:var(--primary)">+${ent.amount.toLocaleString()}원</strong>
+                        <div class="item-actions" style="margin-top:4px;">
+                            <button type="button" class="action-btn edit-btn" onclick="editEntry('${ent.id}')">수정</button>
+                            <button type="button" class="action-btn delete-btn" onclick="deleteEntry('${ent.id}')">삭제</button>
+                        </div>
+                    </div>
+                </div>`;
+        });
+        list.innerHTML += `<div style="text-align:right; margin-top:12px; font-weight:700; font-size:14px;">자산 투자 총액: <span style="color:var(--primary)">${totalAsset.toLocaleString()}원</span></div>`;
     }
 </script>
 
