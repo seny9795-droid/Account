@@ -973,7 +973,7 @@ document.getElementById('entry-form').addEventListener('submit', function(e) {
         e.preventDefault();
         const type = document.getElementById('type-expense').checked ? 'expense' : 'income';
         const totalAmount = parseInt(document.getElementById('amount').value);
-        if (totalAmount <= 0) return alert("올바른 금액을 입력하세요.");
+        if (isNaN(totalAmount) || totalAmount <= 0) return alert("올바른 금액을 입력하세요.");
         
         const startDateVal = document.getElementById('date').value;
         
@@ -1000,12 +1000,11 @@ document.getElementById('entry-form').addEventListener('submit', function(e) {
             let updateAllFuture = false;
 
             if (originalEntry && ((originalEntry.isFixed && originalEntry.isRepeating) || originalEntry.groupId)) {
-                const choice = confirm("반복 또는 할부 항목입니다.\n\n[확인] 이후 반복되는 모든 건 또는 동일 할부 그룹의 모든 회차를 함께 수정\n[취소] 현재 선택한 해당 건만 수정");
-                updateAllFuture = choice;
+                updateAllFuture = confirm("반복 또는 할부 항목입니다.\n\n[확인] 이후 반복되는 모든 건 또는 동일 할부 그룹의 모든 회차를 함께 수정\n[취소] 현재 선택한 해당 건만 수정");
             }
 
             if (updateAllFuture && originalEntry.isFixed && originalEntry.isRepeating) {
-                // 고정비 반복 일괄 수정
+                // 1. 고정비 반복 일괄 수정
                 entries.forEach(e => {
                     if (e.isFixed && e.isRepeating && e.categoryId === originalEntry.categoryId && e.place === originalEntry.place && new Date(e.date) >= new Date(originalEntry.date)) {
                         e.place = place;
@@ -1015,9 +1014,8 @@ document.getElementById('entry-form').addEventListener('submit', function(e) {
                         e.paymentId = paymentId;
                     }
                 });
-                cancelEdit();
             } else if (updateAllFuture && originalEntry.groupId) {
-                // 💡 할부 개월 수 변경 포함 전체 수정: 기존 할부 그룹 데이터를 싹 지우고 새 개월 수에 맞춰 완벽히 재생성
+                // 2. 💡 할부 그룹 전체 수정 (개월 수 변경 포함): 기존 회차들을 싹 지우고 새 개월 수에 맞춰 완벽히 재생성
                 entries = entries.filter(e => e.groupId !== originalEntry.groupId);
                 
                 const splitAmount = Math.floor(totalAmount / months);
@@ -1051,20 +1049,22 @@ document.getElementById('entry-form').addEventListener('submit', function(e) {
                     };
                     entries.unshift(entryData);
                 }
-                cancelEdit();
             } else {
-                // 단건 수정이거나 일괄 수정을 원하지 않는 경우
+                // 3. 단건 수정인 경우
                 if (originalEntry && originalEntry.groupId) {
-                    entries = entries.filter(e => e.id !== editingId); // 해당 회차만 제거 후 아래에서 신규 생성
-                } else {
                     entries = entries.filter(e => e.id !== editingId);
+                } else {
+                    const index = entries.findIndex(e => e.id === editingId);
+                    if (index !== -1) {
+                        entries[index] = {
+                            ...entries[index],
+                            type, date: startDateVal, categoryId, paymentId, place, item, amount: totalAmount, isFixed, isRepeating
+                        };
+                    }
                 }
-                cancelEdit();
             }
-        }
-
-        // 수정 모드가 아니거나, 기존 할부 그룹을 해제/재생성해야 하는 경우 실행
-        if (!editingId || (editingId && !entries.some(e => e.id === editingId))) {
+        } else {
+            // 4. 신규 등록인 경우
             const splitAmount = Math.floor(totalAmount / months);
             const remainder = totalAmount % months; 
             const newGroupId = isInstallment ? 'group_' + Date.now() : null;
@@ -1100,6 +1100,7 @@ document.getElementById('entry-form').addEventListener('submit', function(e) {
 
         saveData();
         
+        // 폼 초기화 및 수정 모드 해제
         document.getElementById('place').value = '';
         document.getElementById('amount').value = '';
         document.getElementById('item').value = '';
@@ -1110,6 +1111,9 @@ document.getElementById('entry-form').addEventListener('submit', function(e) {
             document.getElementById('is-installment').checked = false;
             document.getElementById('installment-months-container').style.display = 'none';
         }
+        document.getElementById('submit-btn').innerText = '내역 추가하기';
+        document.getElementById('cancel-edit-btn').style.display = 'none';
+        editingId = null;
 
         currentYear = baseDate.getFullYear();
         currentMonth = baseDate.getMonth();
