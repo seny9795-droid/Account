@@ -726,11 +726,12 @@
     }
 
     // 비동기 초기화 실행
-    async function initApp() {
+async function initApp() {
         await loadData();
         processRepeatingFixedExpensesForMonth(currentYear, currentMonth);
         document.getElementById('date').value = getLocalDateString(today);
         toggleFormType();
+        renderSelections(true); // 💡 앱 초기 로딩 시 카테고리/결제수단 렌더링 추가
         renderScheduleSettings();
         renderCategoryBudgetSettings();
         updateUI();
@@ -774,6 +775,7 @@
     }
 
     // 3. 지출/수입 전환 시 할부 영역 노출 제어 (수입일 때는 할부 불가)
+ // 3. 지출/수입 전환 시 할부 영역 노출 제어 및 카테고리 목록 렌더링
     function toggleFormType() {
         const isExpense = document.getElementById('type-expense').checked;
         const installmentWrapper = document.getElementById('installment-toggle-wrapper');
@@ -795,6 +797,8 @@
             if (document.getElementById('is-fixed')) document.getElementById('is-fixed').checked = false;
             if (fixedOptionsContainer) fixedOptionsContainer.style.display = 'none';
         }
+
+        renderSelections(isExpense); // 💡 지출/수입 탭 전환 시 알맞은 카테고리/결제수단 렌더링 호출
     }
     function renderSelections(isExpense) {
         const catList = document.getElementById('category-list');
