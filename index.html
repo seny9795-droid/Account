@@ -969,7 +969,7 @@
         updateDashboardStats();
     }
 
- document.getElementById('entry-form').addEventListener('submit', function(e) {
+document.getElementById('entry-form').addEventListener('submit', function(e) {
         e.preventDefault();
         const type = document.getElementById('type-expense').checked ? 'expense' : 'income';
         const totalAmount = parseInt(document.getElementById('amount').value);
@@ -992,7 +992,7 @@
             let updateAllFuture = false;
 
             if (originalEntry && ((originalEntry.isFixed && originalEntry.isRepeating) || originalEntry.groupId)) {
-                const choice = confirm("반복 또는 할부 항목입니다.\n\n[확인] 이후 반복되는 모든 건(또는 동일 할부 그룹)을 함께 수정\n[취소] 현재 선택한 해당 건만 수정");
+                const choice = confirm("반복 또는 할부 항목입니다.\n\n[확인] 이후 반복되는 모든 건 또는 동일 할부 그룹의 모든 회차를 함께 수정\n[취소] 현재 선택한 해당 건만 수정");
                 updateAllFuture = choice;
             }
 
@@ -1009,16 +1009,24 @@
                         }
                     });
                 } else if (originalEntry.groupId) {
-                    // 할부 그룹 전체 일괄 수정
-                    entries.forEach(e => {
-                        if (e.groupId === originalEntry.groupId) {
-                            e.place = place;
-                            e.categoryId = categoryId;
-                            e.paymentId = paymentId;
-                            let match = e.item.match(/\(\d+\/\d+회차\)/);
-                            let 회차표기 = match ? match[0] : '';
-                            e.item = item + (회차표기 ? ' ' + 회차표기 : '');
-                        }
+                    // 💡 할부 그룹 전체 연동 수정: 동일 할부 그룹의 모든 회차(다음달 포함)를 찾아 정보 및 금액 일괄 갱신
+                    const groupEntries = entries.filter(e => e.groupId === originalEntry.groupId);
+                    groupEntries.sort((a, b) => new Date(a.date) - new Date(b.date)); // 날짜순 정렬
+                    
+                    const newMonths = groupEntries.length;
+                    const splitAmount = Math.floor(totalAmount / newMonths);
+                    const remainder = totalAmount % newMonths;
+
+                    groupEntries.forEach((e, idx) => {
+                        e.place = place;
+                        e.categoryId = categoryId;
+                        e.paymentId = paymentId;
+                        e.amount = splitAmount + (idx === 0 ? remainder : 0);
+                        
+                        // 품목명에 회차 표기 유지하며 내용 갱신
+                        let match = e.item.match(/\(\d+\/\d+회차\)/);
+                        let 회차표기 = match ? match[0] : `(${idx+1}/${newMonths}회차)`;
+                        e.item = item + ' ' + 회차표기;
                     });
                 }
             } else {
@@ -1032,12 +1040,21 @@
             }
             cancelEdit();
         } else {
+            // 💡 할부 신규 생성: 선택한 개월 수 만큼 다음 달들로 분할 데이터 생성 및 그룹화 적용
             const splitAmount = Math.floor(totalAmount / months);
             const remainder = totalAmount % months; 
             const newGroupId = isInstallment ? 'group_' + Date.now() : null;
 
             for (let i = 0; i < months; i++) {
-                let targetDate = new Date(baseDate.getFullYear(), baseDate.getMonth() + i, baseDate.getDate());
+                let targetYear = baseDate.getFullYear();
+                let targetMonth = baseDate.getMonth() + i;
+                let originalDay = baseDate.getDate();
+
+                // 월말 오버플로우 방지 (예: 1월 31일 -> 2월 28일)
+                let lastDayOfTargetMonth = new Date(targetYear, targetMonth + 1, 0).getDate();
+                let targetDay = Math.min(originalDay, lastDayOfTargetMonth);
+
+                let targetDate = new Date(targetYear, targetMonth, targetDay);
                 let amountToApply = splitAmount + (i === 0 ? remainder : 0);
                 let itemLabel = months > 1 ? `${item} (${i+1}/${months}회차)` : item;
 
