@@ -260,6 +260,9 @@
         border: 1px solid #eee; 
         display: none; 
     }
+
+        /* 💡 자산관리 토글 버튼 스타일 추가 */
+    #type-asset:checked + label { background: #e8f4fd; color: var(--primary); border-color: var(--primary); }
     </style>
 </head>
 <body>
@@ -276,18 +279,21 @@
 <!-- 1. 대시보드 탭 -->
     <div id="dashboard-section" class="section-content active-section">
         <div class="dashboard-grid">
-            <!-- 왼쪽: 입력 폼 영역 + 이번 달 요약 카드 + 고정 지출 리스트 -->
+<!-- 왼쪽: 입력 폼 영역 (지출/수입/자산관리 통합) -->
             <div class="left-panel">
                 <div class="type-toggle">
                     <input type="radio" id="type-expense" name="entry-type" value="expense" checked onchange="toggleFormType()">
                     <label for="type-expense">지출</label>
                     <input type="radio" id="type-income" name="entry-type" value="income" onchange="toggleFormType()">
                     <label for="type-income">수입</label>
+                    <input type="radio" id="type-asset" name="entry-type" value="asset" onchange="toggleFormType()">
+                    <label for="type-asset">자산관리</label>
                 </div>
 
                 <div class="form-card">
                     <form id="entry-form">
-                        <div class="input-grid">
+                        <!-- 💡 지출/수입용 입력 그리드 -->
+                        <div class="input-grid" id="standard-input-grid">
                             <input type="date" id="date" class="full-width" required>
                             <input type="text" id="place" placeholder="사용 장소 / 수입처" required>
                             <input type="number" id="amount" placeholder="금액 (원)" required>
@@ -336,15 +342,50 @@
                                 </div>
                             </div>
                         </div>
+
+                        <!-- 💡 자산관리 전용 입력 그리드 (투자처 / 금액 / 내용 / 은행명 / 카테고리 / 반복여부 / 반복주기) -->
+                        <div class="input-grid" id="asset-input-grid" style="display: none;">
+                            <input type="date" id="asset-date" class="full-width" required>
+                            <input type="text" id="asset-place" placeholder="투자처 (예: 주식, 적금 등)" required>
+                            <input type="number" id="asset-amount" placeholder="금액 (원)" required>
+                            <input type="text" id="asset-item" placeholder="내역 상세" class="full-width" required>
+
+                            <!-- 은행명 선택 영역 -->
+                            <div class="selection-container full-width" style="margin-bottom:12px;">
+                                <span class="selection-label">은행명 선택</span>
+                                <div class="selection-list" id="bank-list"></div>
+                            </div>
+
+                            <!-- 카테고리 선택 영역 (추가/제거 기능 포함) -->
+                            <div class="selection-container full-width" style="margin-bottom:12px;">
+                                <span class="selection-label">자산 카테고리</span>
+                                <div class="selection-list" id="asset-category-list"></div>
+                            </div>
+
+                            <!-- 반복 여부 및 주기 설정 -->
+                            <div class="fixed-expense-wrapper full-width" style="background:#f8f9fa;">
+                                <input type="checkbox" id="asset-is-repeating" onchange="toggleAssetRepeating()">
+                                <label for="asset-is-repeating">자산 납입 반복 설정</label>
+                            </div>
+
+                            <div class="selection-container full-width" id="asset-repeat-cycle-container" style="display:none; margin-bottom:12px; background:#f8f9fa; padding:12px; border-radius:12px; border:1px solid #eee;">
+                                <span class="selection-label">반복 주기 선택</span>
+                                <select id="asset-repeat-cycle" class="filter-select" style="width:100%;">
+                                    <option value="monthly">매월 반복</option>
+                                    <option value="quarterly">매3개월 (분기) 반복</option>
+                                    <option value="yearly">매년 반복</option>
+                                </select>
+                            </div>
+                        </div>
                         
                         <div class="btn-group">
                             <button type="submit" class="submit-btn" id="submit-btn">내역 추가하기</button>
-                            <button type="button" class="cancel-edit-btn" id="cancel-edit-btn" onclick="cancelEdit()">수정 시 취소</button>
+                            <button type="button" class="cancel-edit-btn" id="cancel-edit-btn" onclick="cancelEdit()">수정 취소</button>
                         </div>
                     </form>
                 </div>
 
-                <!-- 이번 달 요약 카드 (좌측으로 이동) -->
+                <!-- 이번 달 요약 카드 -->
                 <div class="stats-card">
                     <h3 class="stats-title" id="current-month-title">이번 달 요약</h3>
                     <div class="summary-grid-3">
@@ -379,7 +420,7 @@
                     </div>
                 </div>
 
-                <!-- 이번 달 고정 지출 리스트 (좌측으로 이동) -->
+                <!-- 이번 달 고정 지출 리스트 -->
                 <div class="stats-card">
                     <h3 class="stats-title">고정 지출 리스트</h3>
                     <div id="dashboard-fixed-expense-list"></div>
@@ -565,6 +606,18 @@
     ];
     let userSettings = { payday: 21 };
     let manualCurrentBudget = null; 
+
+    // 💡 자산관리용 데이터 배열 추가
+    let assetCategories = [
+        { id: 'ast1', name: '주식/ETF', color: '#3498db' },
+        { id: 'ast2', name: '예적금', color: '#2ecc71' }
+    ];
+    let banks = [
+        { id: 'bank1', name: '신한은행' },
+        { id: 'bank2', name: '국민은행' },
+        { id: 'bank3', name: '저축은행' }
+    ];
+    
 
     // 구글 시트 연동 로드 함수
     async function loadData() {
@@ -777,30 +830,138 @@ async function initApp() {
 
     // 3. 지출/수입 전환 시 할부 영역 노출 제어 (수입일 때는 할부 불가)
  // 3. 지출/수입 전환 시 할부 영역 노출 제어 및 카테고리 목록 렌더링
-    function toggleFormType() {
+function toggleFormType() {
         const isExpense = document.getElementById('type-expense').checked;
+        const isIncome = document.getElementById('type-income').checked;
+        const isAsset = document.getElementById('type-asset').checked;
+
+        const stdGrid = document.getElementById('standard-input-grid');
+        const assetGrid = document.getElementById('asset-input-grid');
+        
+        if (stdGrid) stdGrid.style.display = isAsset ? 'none' : 'grid';
+        if (assetGrid) assetGrid.style.display = isAsset ? 'grid' : 'none';
+
         const installmentWrapper = document.getElementById('installment-toggle-wrapper');
         const installmentMonthsContainer = document.getElementById('installment-months-container');
         const fixedContainer = document.getElementById('fixed-expense-container');
         const fixedOptionsContainer = document.getElementById('fixed-options-container');
 
-        if (installmentWrapper) {
-            installmentWrapper.style.display = isExpense ? 'block' : 'none';
-        }
+        if (installmentWrapper) installmentWrapper.style.display = isExpense ? 'block' : 'none';
         if (!isExpense) {
             if (document.getElementById('is-installment')) document.getElementById('is-installment').checked = false;
             if (installmentMonthsContainer) installmentMonthsContainer.style.display = 'none';
         }
-        if (fixedContainer) {
-            fixedContainer.style.display = isExpense ? 'block' : 'none';
-        }
+        if (fixedContainer) fixedContainer.style.display = isExpense ? 'block' : 'none';
         if (!isExpense) {
             if (document.getElementById('is-fixed')) document.getElementById('is-fixed').checked = false;
             if (fixedOptionsContainer) fixedOptionsContainer.style.display = 'none';
         }
 
-        renderSelections(isExpense); // 💡 지출/수입 탭 전환 시 알맞은 카테고리/결제수단 렌더링 호출
+        if (isAsset) {
+            renderAssetSelections();
+        } else {
+            renderSelections(isExpense);
+        }
     }
+
+    function toggleAssetRepeating() {
+        const isChecked = document.getElementById('asset-is-repeating').checked;
+        const cycleContainer = document.getElementById('asset-repeat-cycle-container');
+        if (cycleContainer) cycleContainer.style.display = isChecked ? 'block' : 'none';
+    }
+
+    // 자산 카테고리 및 은행명 렌더링 함수
+    function renderAssetSelections() {
+        const catList = document.getElementById('asset-category-list');
+        if (catList) {
+            catList.innerHTML = '';
+            assetCategories.forEach((cat, idx) => {
+                catList.innerHTML += `
+                    <div class="selection-item">
+                        <input type="radio" id="ast_cat_${cat.id}" name="asset-category" value="${cat.id}" ${idx === 0 ? 'checked' : ''}>
+                        <label for="ast_cat_${cat.id}" onclick="setTimeout(updateAssetStyles, 10)">${cat.name}</label>
+                    </div>`;
+            });
+            catList.innerHTML += `
+                <div class="action-btns-wrapper">
+                    <button type="button" class="action-btn-small" onclick="addAssetCategory()">+ 추가</button>
+                    <button type="button" class="action-btn-small del-btn-small" onclick="deleteAssetCategory()">- 삭제</button>
+                </div>`;
+        }
+
+        const bankList = document.getElementById('bank-list');
+        if (bankList) {
+            bankList.innerHTML = '';
+            banks.forEach((bank, idx) => {
+                bankList.innerHTML += `
+                    <div class="selection-item">
+                        <input type="radio" id="bank_${bank.id}" name="bank" value="${bank.id}" ${idx === 0 ? 'checked' : ''}>
+                        <label for="bank_${bank.id}" onclick="setTimeout(updateAssetStyles, 10)">${bank.name}</label>
+                    </div>`;
+            });
+            bankList.innerHTML += `
+                <div class="action-btns-wrapper">
+                    <button type="button" class="action-btn-small" onclick="addBank()">+ 추가</button>
+                    <button type="button" class="action-btn-small del-btn-small" onclick="deleteBank()">- 삭제</button>
+                </div>`;
+        }
+        updateAssetStyles();
+    }
+
+    function updateAssetStyles() {
+        document.querySelectorAll('input[name="asset-category"]').forEach(radio => {
+            const label = document.querySelector(`label[for="${radio.id}"]`);
+            const cat = assetCategories.find(c => c.id === radio.value);
+            if (radio.checked && cat) { label.style.background = cat.color; label.style.color = '#fff'; label.style.borderColor = cat.color; } 
+            else { label.style.background = '#f8f9fa'; label.style.color = '#555'; label.style.borderColor = 'var(--border)'; }
+        });
+        document.querySelectorAll('input[name="bank"]').forEach(radio => {
+            const label = document.querySelector(`label[for="${radio.id}"]`);
+            if (radio.checked) { label.style.background = '#34495e'; label.style.color = '#fff'; label.style.borderColor = '#34495e'; } 
+            else { label.style.background = '#f8f9fa'; label.style.color = '#555'; label.style.borderColor = 'var(--border)'; }
+        });
+    }
+
+    function addAssetCategory() {
+        const name = prompt("새로운 자산 카테고리 이름을 입력하세요:");
+        if (name && name.trim()) {
+            assetCategories.push({ id: 'ast' + Date.now(), name: name.trim(), color: getUniqueColor() });
+            saveData();
+            renderAssetSelections();
+        }
+    }
+
+    function deleteAssetCategory() {
+        const selected = document.querySelector('input[name="asset-category"]:checked');
+        if (!selected) return;
+        if (assetCategories.length <= 1) return alert("최소 1개의 카테고리가 필요합니다.");
+        if (confirm("이 자산 카테고리를 삭제하시겠습니까?")) {
+            assetCategories = assetCategories.filter(c => c.id !== selected.value);
+            saveData();
+            renderAssetSelections();
+        }
+    }
+
+    function addBank() {
+        const name = prompt("은행명을 입력하세요 (예: 토스뱅크):");
+        if (name && name.trim()) {
+            banks.push({ id: 'bank' + Date.now(), name: name.trim() });
+            saveData();
+            renderAssetSelections();
+        }
+    }
+
+    function deleteBank() {
+        const selected = document.querySelector('input[name="bank"]:checked');
+        if (!selected) return;
+        if (banks.length <= 1) return alert("최소 1개의 은행은 필요합니다.");
+        if (confirm("이 은행명을 삭제하시겠습니까?")) {
+            banks = banks.filter(b => b.id !== selected.value);
+            saveData();
+            renderAssetSelections();
+        }
+    }
+    
     function renderSelections(isExpense) {
         const catList = document.getElementById('category-list');
         catList.innerHTML = '';
@@ -1029,6 +1190,49 @@ async function initApp() {
 
 // 💡 [수정] 모든 수정 시 중복 생성 없이 기존 데이터를 정확히 업데이트하는 폼 제출 핸들러
     document.getElementById('entry-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        // 💡 [추가] 자산관리 탭이 선택되어 있을 때 처리하는 로직
+        const isAsset = document.getElementById('type-asset')?.checked;
+        if (isAsset) {
+            const totalAmount = parseInt(document.getElementById('asset-amount').value);
+            if (isNaN(totalAmount) || totalAmount <= 0) return alert("올바른 금액을 입력하세요.");
+
+            const startDateVal = document.getElementById('asset-date').value;
+            const place = document.getElementById('asset-place').value;
+            const item = document.getElementById('asset-item').value;
+            const categoryId = document.querySelector('input[name="asset-category"]:checked')?.value || assetCategories[0].id;
+            const bankId = document.querySelector('input[name="bank"]:checked')?.value || banks[0].id;
+            const isRepeating = document.getElementById('asset-is-repeating').checked;
+            const repeatCycle = document.getElementById('asset-repeat-cycle').value;
+
+            const entryData = {
+                id: editingId || ('asset_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5)),
+                type: 'asset',
+                date: startDateVal,
+                categoryId: categoryId,
+                paymentId: bankId,
+                place: place,
+                item: item,
+                amount: totalAmount,
+                isFixed: false,
+                isRepeating: isRepeating,
+                repeatCycle: repeatCycle
+            };
+
+            if (editingId) {
+                const index = entries.findIndex(ent => String(ent.id) === String(editingId));
+                if (index !== -1) entries[index] = entryData;
+            } else {
+                entries.unshift(entryData);
+            }
+
+            saveData();
+            cancelEdit();
+            selectDate(startDateVal);
+            updateUI();
+            return; // 자산관리는 여기서 저장 후 종료
+        }
         e.preventDefault();
         const type = document.getElementById('type-expense').checked ? 'expense' : 'income';
         const totalAmount = parseInt(document.getElementById('amount').value);
