@@ -975,9 +975,18 @@ document.getElementById('entry-form').addEventListener('submit', function(e) {
         const totalAmount = parseInt(document.getElementById('amount').value);
         if (totalAmount <= 0) return alert("올바른 금액을 입력하세요.");
         
-        const startDateVal = document.getElementById('date').value;
-        const isInstallment = type === 'expense' && document.getElementById('is-installment').checked;
-        const months = isInstallment ? parseInt(document.getElementById('installment-months').value) || 1 : 1;
+const startDateVal = document.getElementById('date').value;
+        
+        // 💡 할부 체크박스와 선택된 개월 수를 명확하게 읽어오도록 수정
+        const isInstallmentCheckbox = document.getElementById('is-installment');
+        const isInstallment = (type === 'expense' && isInstallmentCheckbox && isInstallmentCheckbox.checked);
+        
+        let months = 1;
+        if (isInstallment) {
+            const monthsSelect = document.getElementById('installment-months');
+            months = monthsSelect ? parseInt(monthsSelect.value) || 2 : 2;
+        }
+        
         const baseDate = new Date(startDateVal);
 
         const categoryId = document.querySelector('input[name="category"]:checked').value;
