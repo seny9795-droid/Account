@@ -1057,7 +1057,7 @@ document.getElementById('entry-form').addEventListener('submit', function(e) {
             }
 
             if (updateAllFuture && originalEntry.isFixed && originalEntry.isRepeating) {
-                // 고정비 반복 일괄 수정
+                // 1. 고정비 반복 일괄 수정
                 entries.forEach(e => {
                     if (e.isFixed && e.isRepeating && e.categoryId === originalEntry.categoryId && e.place === originalEntry.place && new Date(e.date) >= new Date(originalEntry.date)) {
                         e.place = place;
@@ -1068,7 +1068,7 @@ document.getElementById('entry-form').addEventListener('submit', function(e) {
                     }
                 });
             } else if (updateAllFuture && originalEntry && originalEntry.groupId) {
-                // 💡 [할부 핵심] 기존 할부 그룹을 전체 제거 후, 입력된 '총액(원금)'을 기준으로 새로운 개월 수에 맞춰 완벽히 재분할 생성
+                // 2. 기존 할부 그룹 전체 수정 (원금 기준 재분할)
                 entries = entries.filter(e => e.groupId !== originalEntry.groupId);
                 
                 const splitAmount = Math.floor(totalAmount / months);
@@ -1080,7 +1080,6 @@ document.getElementById('entry-form').addEventListener('submit', function(e) {
                     let targetMonth = baseDate.getMonth() + i;
                     let originalDay = baseDate.getDate();
 
-                    // 월말 오버플로우 방지 (예: 1월 31일 -> 2월 28일)
                     let lastDayOfTargetMonth = new Date(targetYear, targetMonth + 1, 0).getDate();
                     let targetDay = Math.min(originalDay, lastDayOfTargetMonth);
 
@@ -1104,21 +1103,13 @@ document.getElementById('entry-form').addEventListener('submit', function(e) {
                     entries.unshift(entryData);
                 }
             } else {
-                // 단건 수정인 경우
-                if (originalEntry && originalEntry.groupId) {
-                    entries = entries.filter(e => String(e.id) !== String(editingId));
-                } else {
-                    const index = entries.findIndex(e => String(e.id) === String(editingId));
-                    if (index !== -1) {
-                        entries[index] = {
-                            ...entries[index],
-                            type, date: startDateVal, categoryId, paymentId, place, item, amount: totalAmount, isFixed, isRepeating
-                        };
-                    }
-                }
+                // 3. 단건 수정이거나, 💡 [핵심 추가] 일시불 내역을 수정하면서 '할부'로 새로 전환하는 경우
+                entries = entries.filter(e => String(e.id) !== String(editingId)); // 기존 단건 제거 후 아래에서 신규/할부 생성 로직 탐
             }
-        } else {
-            // 💡 [신규 할부 생성] 선택한 개월 수 만큼 총액을 균등 분할하여 미래 달들로 데이터 생성
+        }
+
+        // 수정 모드가 아니거나, 일시불에서 할부로 새로 전환되어 기존 단건이 삭제된 경우 실행되는 생성 로직
+        if (!editingId || (editingId && !entries.some(e => String(e.id) === String(editingId)))) {
             const splitAmount = Math.floor(totalAmount / months);
             const remainder = totalAmount % months; 
             const newGroupId = isInstallment ? 'group_' + Date.now() : null;
@@ -1128,6 +1119,7 @@ document.getElementById('entry-form').addEventListener('submit', function(e) {
                 let targetMonth = baseDate.getMonth() + i;
                 let originalDay = baseDate.getDate();
 
+                // 월말 오버플로우 방지
                 let lastDayOfTargetMonth = new Date(targetYear, targetMonth + 1, 0).getDate();
                 let targetDay = Math.min(originalDay, lastDayOfTargetMonth);
 
@@ -1154,7 +1146,7 @@ document.getElementById('entry-form').addEventListener('submit', function(e) {
 
         saveData();
         
-        // 입력폼 및 상태 초기화
+        // 폼 초기화 및 상태 정리
         document.getElementById('place').value = '';
         document.getElementById('amount').value = '';
         document.getElementById('item').value = '';
