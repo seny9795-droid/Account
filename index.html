@@ -414,6 +414,17 @@
                         <span>실제 지출과 목표 지출의 차액</span>
                         <strong id="dash-budget-diff">0원</strong>
                     </div>
+                    <!-- 💡 [추가] 총 자산 투자액 표시 줄 -->
+                        <div style="font-size: 13px; color: #555; margin-bottom: 12px; display: flex; justify-content: space-between; background: #fff; padding: 7px 10px; border-radius: 6px; border: 1px solid #eee;">
+                            <span>총 자산 투자액</span>
+                            <strong id="dash-asset" style="color: var(--primary);">0원</strong>
+                        </div>
+
+                        <!-- 💡 [추가] 자산관리 상세 내역 리스트 영역 -->
+                        <div style="margin-bottom: 12px; padding: 10px; background: #fff; border-radius: 8px; border: 1px solid #eee;">
+                            <div style="font-size: 12px; font-weight: 700; color: #2c3e50; margin-bottom: 6px;">💼 당월 자산관리 상세 내역</div>
+                            <div id="dash-asset-details-list" style="max-height: 120px; overflow-y: auto; font-size: 11px;"></div>
+                        </div>
                     <div class="total-balance">
                         <div class="balance-label">현재 예산 <button class="edit-budget-btn" onclick="editCurrentBudget()" style="background:none; border:1px solid #ccc; border-radius:4px; padding:2px 6px; cursor:pointer; font-size:11px;">수정</button></div>
                         <div class="balance-val"><span id="dash-balance">0</span>원</div>
@@ -1625,7 +1636,7 @@ function closeDailyDetails() {
 
     function calculateSelectedMonthTotals() {
         const selMonth = currentMonth + 1, selYear = currentYear;
-        let totalInc = 0, lastMonthSalary = 0, totalExp = 0;
+        let totalInc = 0, lastMonthSalary = 0, totalExp = 0, totalAsset = 0; // 💡 totalAsset 변수 추가
         
         let targetMonth = selMonth - 1;
         let targetYear = selYear;
@@ -1641,6 +1652,7 @@ function closeDailyDetails() {
             if (eMonth === selMonth && eYear === selYear) {
                 if (ent.type === 'income') totalInc += ent.amount;
                 if (ent.type === 'expense') totalExp += ent.amount;
+                if (ent.type === 'asset') totalAsset += ent.amount; // 💡 자산관리 금액 합산
             }
 
             if (eMonth === targetMonth && eYear === targetYear && ent.type === 'income') {
@@ -1650,21 +1662,25 @@ function closeDailyDetails() {
                 }
             }
         });
-        return { income: totalInc, salary: lastMonthSalary, expense: totalExp };
+        return { income: totalInc, salary: lastMonthSalary, expense: totalExp, asset: totalAsset }; // 💡 asset 반환값 추가
     }
-
-    function updateDashboardStats() {
+function updateDashboardStats() {
         document.getElementById('current-month-title').innerText = `${currentMonth + 1}월 요약`;
         let totals = calculateSelectedMonthTotals();
         document.getElementById('dash-income').textContent = totals.income.toLocaleString();
         document.getElementById('dash-salary').textContent = totals.salary.toLocaleString();
         document.getElementById('dash-expense').textContent = totals.expense.toLocaleString();
         
+        // 💡 총 자산 투자액 텍스트 반영
+        const assetEl = document.getElementById('dash-asset');
+        if (assetEl) assetEl.textContent = `${totals.asset.toLocaleString()}원`;
+
         let totalTargetBudget = 0;
         expCategories.forEach(c => totalTargetBudget += (c.budget || 0));
         document.getElementById('dash-total-budget').textContent = `${totalTargetBudget.toLocaleString()}원`;
 
-        let availableBudget = totals.income + totals.salary - totalTargetBudget;
+        // 💡 목표 가용예산: (수입 + 월급) - (지출 + 자산투자액)
+        let availableBudget = totals.income + totals.salary - totals.expense - totals.asset;
         const availEl = document.getElementById('dash-available-budget');
         availEl.textContent = `${availableBudget.toLocaleString()}원`;
         availEl.style.color = availableBudget < 0 ? 'var(--expense)' : 'var(--income)';
@@ -1674,11 +1690,50 @@ function closeDailyDetails() {
         diffEl.textContent = `${diffBudget >= 0 ? '+' : ''}${diffBudget.toLocaleString()}원`;
         diffEl.style.color = diffBudget < 0 ? 'var(--expense)' : 'var(--primary)';
 
-        let defaultBudget = totals.income + totals.salary - totals.expense;
+        let defaultBudget = totals.income + totals.salary - totals.expense - totals.asset;
         let displayBudget = manualCurrentBudget !== null ? manualCurrentBudget : defaultBudget;
         
         document.getElementById('dash-balance').textContent = displayBudget.toLocaleString();
         document.getElementById('dash-balance').style.color = displayBudget < 0 ? 'var(--expense)' : 'var(--primary)';
+
+        // 💡 자산관리 상세 리스트 렌더링 함수 호출
+        renderDashboardAssetDetails();
+    }
+
+    // 💡 [추가] 요약 카드 내부에 당월 자산관리 상세 내역을 그려주는 함수
+    function renderDashboardAssetDetails() {
+        const container = document.getElementById('dash-asset-details-list');
+        if (!container) return;
+
+        const curMonth = currentMonth + 1;
+        const curYear = currentYear;
+
+        const assetEntries = entries.filter(ent => {
+            if (ent.type !== 'asset') return false;
+            const d = new Date(ent.date);
+            return d.getFullYear() === curYear && (d.getMonth() + 1) === curMonth;
+        });
+
+        if (assetEntries.length === 0) {
+            container.innerHTML = '<div style="color: #888; text-align: center; padding: 4px 0;">이번 달 자산관리 내역이 없습니다.</div>';
+            return;
+        }
+
+        let html = '';
+        assetEntries.forEach(ent => {
+            const cat = assetCategories.find(c => c.id === ent.categoryId);
+            const bank = banks.find(b => b.id === ent.paymentId);
+            html += `
+                <div style="display: flex; justify-content: space-between; align-items: center; background: #f8f9fa; padding: 5px 6px; border-radius: 4px; border: 1px solid #eee; margin-bottom: 3px;">
+                    <div>
+                        <span style="font-weight: 600; color: #333;">${ent.place}</span>
+                        <span style="color: #666; font-size: 10px;">(${bank?.name || '은행'}·${cat?.name || '분류'})</span>
+                    </div>
+                    <strong style="color: var(--primary);">+${ent.amount.toLocaleString()}원</strong>
+                </div>
+            `;
+        });
+        container.innerHTML = html;
     }
 
     function updateDashboardBudgets() {
