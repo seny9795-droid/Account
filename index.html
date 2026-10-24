@@ -754,11 +754,11 @@
         return localDate.toISOString().split('T')[0];
     }
 
-    async function initApp() {
+async function initApp() {
         await loadData();
         processRepeatingFixedExpensesForMonth(currentYear, currentMonth);
-        document.getElementById('date').value = getLocalDateString(today);
-        document.getElementById('asset-date').value = getLocalDateString(today);
+        const todayStr = getLocalDateString(today);
+        document.getElementById('date').value = todayStr;
         toggleFormType();
         renderSelections(true);
         renderScheduleSettings();
