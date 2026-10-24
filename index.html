@@ -1041,8 +1041,16 @@ document.getElementById('entry-form').addEventListener('submit', function(e) {
         
         const baseDate = new Date(startDateVal);
 
-        const categoryId = document.querySelector('input[name="category"]:checked').value;
-        const paymentId = type === 'expense' ? document.querySelector('input[name="payment"]:checked').value : null;
+        // 💡 카테고리와 결제수단 선택값 안전하게 가져오기 (체크된 게 없으면 기본 첫 번째 선택)
+        const checkedCategory = document.querySelector('input[name="category"]:checked');
+        const categoryId = checkedCategory ? checkedCategory.value : (type === 'expense' ? expCategories[0]?.id : incCategories[0]?.id);
+        
+        let paymentId = null;
+        if (type === 'expense') {
+            const checkedPayment = document.querySelector('input[name="payment"]:checked');
+            paymentId = checkedPayment ? checkedPayment.value : (payments[0]?.id || null);
+        }
+
         const place = document.getElementById('place').value;
         const item = document.getElementById('item').value;
         const isFixed = type === 'expense' ? document.getElementById('is-fixed').checked : false;
@@ -1057,7 +1065,7 @@ document.getElementById('entry-form').addEventListener('submit', function(e) {
             }
 
             if (updateAllFuture && originalEntry.isFixed && originalEntry.isRepeating) {
-                // 1. 고정비 반복 일괄 수정
+                // 고정비 반복 일괄 수정
                 entries.forEach(e => {
                     if (e.isFixed && e.isRepeating && e.categoryId === originalEntry.categoryId && e.place === originalEntry.place && new Date(e.date) >= new Date(originalEntry.date)) {
                         e.place = place;
@@ -1068,7 +1076,7 @@ document.getElementById('entry-form').addEventListener('submit', function(e) {
                     }
                 });
             } else if (updateAllFuture && originalEntry && originalEntry.groupId) {
-                // 2. 기존 할부 그룹 전체 수정 (원금 기준 재분할)
+                // 기존 할부 그룹 전체 수정 (원금 기준 재분할)
                 entries = entries.filter(e => e.groupId !== originalEntry.groupId);
                 
                 const splitAmount = Math.floor(totalAmount / months);
@@ -1103,12 +1111,12 @@ document.getElementById('entry-form').addEventListener('submit', function(e) {
                     entries.unshift(entryData);
                 }
             } else {
-                // 3. 단건 수정이거나, 💡 [핵심 추가] 일시불 내역을 수정하면서 '할부'로 새로 전환하는 경우
-                entries = entries.filter(e => String(e.id) !== String(editingId)); // 기존 단건 제거 후 아래에서 신규/할부 생성 로직 탐
+                // 단건 수정이거나 일시불 -> 할부로 전환하는 경우
+                entries = entries.filter(e => String(e.id) !== String(editingId));
             }
         }
 
-        // 수정 모드가 아니거나, 일시불에서 할부로 새로 전환되어 기존 단건이 삭제된 경우 실행되는 생성 로직
+        // 수정 모드가 아니거나, 일시불/단건에서 할부로 새로 전환되어 기존 대상이 제거된 경우 실행
         if (!editingId || (editingId && !entries.some(e => String(e.id) === String(editingId)))) {
             const splitAmount = Math.floor(totalAmount / months);
             const remainder = totalAmount % months; 
@@ -1119,7 +1127,6 @@ document.getElementById('entry-form').addEventListener('submit', function(e) {
                 let targetMonth = baseDate.getMonth() + i;
                 let originalDay = baseDate.getDate();
 
-                // 월말 오버플로우 방지
                 let lastDayOfTargetMonth = new Date(targetYear, targetMonth + 1, 0).getDate();
                 let targetDay = Math.min(originalDay, lastDayOfTargetMonth);
 
