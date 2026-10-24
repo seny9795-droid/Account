@@ -314,25 +314,30 @@
                     </div>
                 </form>
 
-                <!-- 월간 달력 -->
-                <div class="calendar-wrapper" id="calendar-wrapper">
-                    <div class="calendar-header">
-                        <button class="cal-nav-btn" onclick="changeMonth(-1)">◀ 이전달</button>
-                        <span id="calendar-month-label" style="font-weight:800; font-size:16px;"></span>
-                        <button class="cal-nav-btn" onclick="changeMonth(1)">다음달 ▶</button>
+<!-- 월간 달력 및 상세 내역 가로 배치 영역 -->
+                <div class="calendar-and-detail-container">
+                    <!-- 왼쪽: 달력 영역 -->
+                    <div class="calendar-main-pane calendar-wrapper" id="calendar-wrapper" style="margin-top: 32px; border: 1px solid #eee; border-radius: 16px; padding: 20px; background: #fff;">
+                        <div class="calendar-header">
+                            <button class="cal-nav-btn" onclick="changeMonth(-1)">◀ 이전달</button>
+                            <span id="calendar-month-label" style="font-weight:800; font-size:16px;"></span>
+                            <button class="cal-nav-btn" onclick="changeMonth(1)">다음달 ▶</button>
+                        </div>
+                        <div class="calendar-grid" id="calendar-grid">
+                            <div class="cal-day-header" style="color:#e74c3c;">일</div>
+                            <div class="cal-day-header">월</div>
+                            <div class="cal-day-header">화</div>
+                            <div class="cal-day-header">수</div>
+                            <div class="cal-day-header">목</div>
+                            <div class="cal-day-header">금</div>
+                            <div class="cal-day-header" style="color:#3498db;">토</div>
+                        </div>
                     </div>
-                    <div class="calendar-grid" id="calendar-grid">
-                        <div class="cal-day-header" style="color:#e74c3c;">일</div>
-                        <div class="cal-day-header">월</div>
-                        <div class="cal-day-header">화</div>
-                        <div class="cal-day-header">수</div>
-                        <div class="cal-day-header">목</div>
-                        <div class="cal-day-header">금</div>
-                        <div class="cal-day-header" style="color:#3498db;">토</div>
-                    </div>
-                    <div id="daily-detail-section" class="daily-detail-section">
-                        <div class="daily-detail-header">
-                            <strong id="daily-detail-title" style="color:#333;">상세 내역</strong>
+
+                    <!-- 오른쪽: 상세 내역 사이드 패널 (달력 옆에 나란히 위치) -->
+                    <div id="daily-detail-section" class="daily-detail-side-pane">
+                        <div class="daily-detail-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                            <strong id="daily-detail-title" style="color:#333; font-size:15px;">상세 내역</strong>
                             <button class="close-btn" onclick="closeDailyDetails()">닫기</button>
                         </div>
                         <ul class="expense-list" id="daily-entry-list"></ul>
@@ -1247,7 +1252,11 @@
         }
         document.getElementById('daily-detail-section').style.display = 'block';
     }
-    function closeDailyDetails() { selectedDateStr = null; document.getElementById('daily-detail-section').style.display = 'none'; renderCalendar(); }
+function closeDailyDetails() { 
+        selectedDateStr = null; 
+        document.getElementById('daily-detail-section').style.display = 'none'; 
+        renderCalendar(); 
+    }
 
     function calculateSelectedMonthTotals() {
         const selMonth = currentMonth + 1, selYear = currentYear;
