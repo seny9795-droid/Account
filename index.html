@@ -1599,34 +1599,52 @@
         }
     }
 
-    function selectDate(dateStr) {
+function selectDate(dateStr) {
         selectedDateStr = dateStr; 
-        document.getElementById('date').value = dateStr;
-        document.getElementById('asset-date').value = dateStr;
+        
+        // 💡 지출/수입 폼과 자산관리 폼 모두의 날짜 필드를 선택한 날짜로 동기화
+        const dateEl = document.getElementById('date');
+        if (dateEl) dateEl.value = dateStr;
         
         renderCalendar(); 
         const listEl = document.getElementById('daily-entry-list');
         document.getElementById('daily-detail-title').innerText = `${parseInt(dateStr.split('-')[1])}월 ${parseInt(dateStr.split('-')[2])}일 상세 내역`;
         
         listEl.innerHTML = '';
+        // 💡 자산관리는 달력에 표기되지 않으므로 상세내역에는 지출/수입만 표시
         const dayEntries = entries.filter(e => e.date === dateStr && e.type !== 'asset');
-        if (dayEntries.length === 0) listEl.innerHTML = '<li class="empty-state">해당 일자에 입력된 지출/수입 내역이 없습니다.</li>';
-        else {
+        
+        if (dayEntries.length === 0) {
+            listEl.innerHTML = '<li class="empty-state">해당 일자에 입력된 지출/수입 내역이 없습니다.</li>';
+        } else {
             dayEntries.forEach(ent => {
-                const cat = ent.type==='expense'?expCategories.find(c=>c.id===ent.categoryId):incCategories.find(c=>c.id===ent.categoryId);
+                const cat = ent.type === 'expense' ? expCategories.find(c => c.id === ent.categoryId) : incCategories.find(c => c.id === ent.categoryId);
                 let badges = `<span class="badge" style="background-color: ${cat?.color || '#ccc'}">${cat?.name || '삭제됨'}</span>`;
-                if (ent.type==='expense') {
+                if (ent.type === 'expense') {
                     const pay = payments.find(p => p.id === ent.paymentId);
                     badges += `<span class="badge" style="background-color: #34495e">${pay?.name || '삭제됨'}</span>`;
                     if (ent.isFixed) badges += `<span class="badge badge-fixed">고정비</span>`;
                     if (ent.groupId) badges += `<span class="badge badge-installment">할부</span>`;
                 }
-                listEl.innerHTML += `<li class="expense-item"><div style="flex: 1;"><div class="item-badges">${badges}</div><div class="item-main-text">${ent.place}</div><div class="item-sub-text">${ent.item}</div></div><div><span class="${ent.type==='expense'?'amount-exp':'amount-inc'}">${ent.type==='expense'?'-':'+'}${ent.amount.toLocaleString()}원</span><div class="item-actions"><button type="button" class="action-btn edit-btn" onclick="editEntry('${ent.id}')">수정</button><button type="button" class="action-btn delete-btn" onclick="deleteEntry('${ent.id}')">삭제</button></div></div></li>`;
+                listEl.innerHTML += `
+                    <li class="expense-item">
+                        <div style="flex: 1;">
+                            <div class="item-badges">${badges}</div>
+                            <div class="item-main-text">${ent.place}</div>
+                            <div class="item-sub-text">${ent.item}</div>
+                        </div>
+                        <div>
+                            <span class="${ent.type === 'expense' ? 'amount-exp' : 'amount-inc'}">${ent.type === 'expense' ? '-' : '+'}${ent.amount.toLocaleString()}원</span>
+                            <div class="item-actions">
+                                <button type="button" class="action-btn edit-btn" onclick="editEntry('${ent.id}')">수정</button>
+                                <button type="button" class="action-btn delete-btn" onclick="deleteEntry('${ent.id}')">삭제</button>
+                            </div>
+                        </div>
+                    </li>`;
             });
         }
         document.getElementById('daily-detail-section').style.display = 'block';
     }
-
     function closeDailyDetails() { 
         selectedDateStr = null; 
         document.getElementById('daily-detail-section').style.display = 'none'; 
